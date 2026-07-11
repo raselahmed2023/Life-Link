@@ -58,6 +58,8 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
             />
           </span>
         </Link>
+
+
         {/* Desktop navigation */}
         <div className="hidden h-full items-center gap-8 md:flex">
           {navLinks.map((link) => {
@@ -78,6 +80,7 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
             );
           })}
         </div>
+
 
         {/* Desktop actions */}
         <div className="hidden items-center gap-3 md:flex">
@@ -113,6 +116,7 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
           )}
         </div>
 
+
         {/* Mobile menu button */}
         <button
           type="button"
@@ -134,6 +138,8 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
             <Menu size={25} />
           )}
         </button>
+
+
       </nav>
 
       {/* Mobile navigation */}
@@ -184,7 +190,6 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
                 </button>
               </>
             ) : (
-              <>
                 <Link
                   href="/login"
                   onClick={closeMenu}
@@ -192,19 +197,12 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
                 >
                   Login
                 </Link>
-
-                <Link
-                  href="/register"
-                  onClick={closeMenu}
-                  className="mt-1 rounded-lg bg-red-700 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-red-800"
-                >
-                  Become a Donor
-                </Link>
-              </>
             )}
           </div>
         </div>
       )}
+
+      
     </header>
   );
 }
