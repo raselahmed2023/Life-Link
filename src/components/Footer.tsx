@@ -24,37 +24,37 @@ const footerLinks = {
     },
     {
       label: "Success Stories",
-      href: "/#success-stories",
+      href: "/",
     },
   ],
 
   resources: [
     {
       label: "About LifeLink",
-      href: "/about",
+      href: "/",
     },
     {
       label: "How It Works",
-      href: "/#how-it-works",
+      href: "/",
     },
     {
       label: "FAQs",
-      href: "/#faq",
+      href: "/",
     },
     {
       label: "Contact Us",
-      href: "/contact",
+      href: "/",
     },
   ],
 
   legal: [
     {
       label: "Privacy Policy",
-      href: "/privacy",
+      href: "/",
     },
     {
       label: "Terms of Service",
-      href: "/terms",
+      href: "/",
     },
   ],
 };
