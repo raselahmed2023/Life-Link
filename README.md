@@ -1,122 +1,189 @@
 # 🩸 LifeLink
 
-LifeLink is a modern blood donor discovery platform designed to help people find recently available blood donors by blood group and location.
+LifeLink is a responsive blood donor discovery frontend built with Next.js. It helps users search for donors by blood group, location, and availability, view donor profiles, and submit privacy-focused contact requests.
 
-The platform focuses on donor availability, privacy, and secure contact requests. Donor phone numbers are not displayed publicly. A requester must send a contact request before receiving private donor information.
+> **Project status:** Frontend MVP. Donor data is currently stored as mock data, while login, registration, and contact-request submissions are UI simulations.
 
----
+## 🔗 Project Links
 
-##  Live Demo
+- **Live Site:** [https://life-link-cyan-two.vercel.app]
+- **Public GitHub Repository:** [https://github.com/raselahmed2023/Life-Link]
 
-Live Website: https://life-link-cyan-two.vercel.app"
+##  Implemented Features
 
-GitHub Repository: https://github.com/raselahmed2023/Life-Link
+- Responsive landing page with reusable sections
+- Responsive navigation bar and footer
+- Recently available donor cards
+- Blood-group-based donor navigation
+- Search donors by name, district, or area
+- Filter donors by blood group, district, and availability
+- Sort donors by recent confirmation, newest listing, or donation count
+- Dynamic donor details pages
+- Donor availability and donation-history information
+- Privacy-focused contact request form
+- Login page interface
+- Become-a-donor registration page interface
+- FAQ, donation-safety, platform-statistics, and success-story sections
+- Mobile, tablet, and desktop responsive layouts
 
----
-##  Project Overview
+##  Main User Flow
 
-During a medical emergency, finding the correct blood donor quickly can be difficult.
+1. Open the homepage.
+2. Select **Find Donors** from the navigation bar.
+3. Search or filter donors by blood group, district, area, or availability.
+4. Open a donor profile using **View Details**.
+5. Review the donor's profile and submit a contact request.
 
-Many existing donor lists contain outdated information, unavailable donors, or publicly exposed phone numbers. LifeLink attempts to solve these problems by prioritizing recently confirmed donors and protecting their private contact information.
-
----
-
-##  Core Features
-
-- Search donors by blood group
-- Search donors by district and area
-- Filter donors by availability
-- Sort donors by recent confirmation
-- View detailed donor profiles
-- See previous donation information
-- Send contact requests to donors
-- Protected donor phone numbers
-- Responsive design for mobile and desktop
-- Login and registration interfaces
-- Donor profile management interface
-- FAQ and donation safety information
-
----
-
-##  Privacy-Focused Contact System
-
-LifeLink does not publicly display donor phone numbers.
-
-The contact process works like this:
-
-1. A user searches for a donor.
-2. The user opens the donor profile.
-3. The user submits a contact request.
-4. The donor reviews the request.
-5. Contact information is shared only after approval.
-
-
----
-
-##  Technologies Used
-
-### Frontend
-
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- Lucide React Icons
-- Next.js App Router
-
-### Planned Backend
-
-- Node.js
-- Express.js
-- TypeScript
-- MongoDB
-- Mongoose
-- JWT Authentication
-- Zod Validation
-
----
-
-##  Available Pages
+##  Available Routes
 
 | Page | Route | Description |
-|------|-------|-------------|
-| Home | `/` | Main landing page |
-| Find Donors | `/donors` | Search and filter donors |
-| Donor Details | `/donors/[donorId]` | Dynamic donor profile |
-| Login | `/login` | User login interface |
-| Register | `/register` | Account registration |
-| Donor Profile | `/dashboard/donor-profile` | Donor profile management |
+|---|---|---|
+| Home | `/` | Landing page and platform overview |
+| Find Donors | `/donors` | Search, filter, and sort donors |
+| Donor Details | `/donors/[donorId]` | Dynamic donor profile and contact request form |
+| Login | `/login` | Login interface |
+| Become a Donor | `/register` | Donor registration interface |
 
----
+Example donor routes:
 
-##  Homepage Sections
+```text
+/donors/nusrat-jahan
+/donors/kamrul-hasan
+```
 
-The homepage includes:
+Example filtered URL:
 
-- Hero section
-- Donor search panel
-- Recently available donors
-- Blood group directory
-- How LifeLink works
-- Availability confirmation explanation
-- Platform statistics
-- Responsible donation guidelines
-- Success stories
-- Frequently asked questions
-- Footer
+```text
+/donors?bloodGroup=O%2B&district=Dhaka&available=true&sort=recent
+```
 
----
+##  Technology Stack
 
-##  Donor Search
+- **Next.js 16**
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS 4**
+- **Lucide React**
+- **React Icons**
+- **Next.js App Router**
 
-Users can filter donors using:
+##  Project Structure
 
-- Name
-- Blood group
-- District
-- Area
-- Availability status
-- Recently confirmed status
+```text
+Life-Link/
+├── src/
+│   ├── app/
+│   │   ├── donors/
+│   │   │   ├── [donorId]/page.tsx
+│   │   │   └── page.tsx
+│   │   ├── login/page.tsx
+│   │   ├── register/page.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── donors/
+│   │   ├── home/
+│   │   ├── Footer.tsx
+│   │   └── Navbar.tsx
+│   ├── data/
+│   │   └── donors.ts
+│   └── types/
+│       └── donor.ts
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+└── README.md
+```
 
+##  Run Locally
 
-## Backend integration will be added later.
+### Prerequisites
+
+Install the following before starting:
+
+- Node.js
+- npm
+- Git
+
+### 1. Clone the public repository
+
+```bash
+git clone https://github.com/raselahmed2023/Life-Link.git
+```
+
+### 2. Enter the project folder
+
+```bash
+cd Life-Link
+```
+
+### 3. Install dependencies
+
+For a normal local setup:
+
+```bash
+npm install
+```
+
+For an installation that follows `package-lock.json` exactly:
+
+```bash
+npm ci
+```
+
+Use only one of the two installation commands.
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+### 5. Open the application
+
+Visit:
+
+```text
+http://localhost:3000
+```
+
+No environment variables are currently required.
+
+> The project uses Google-hosted Geist fonts and remote images, so an internet connection is required during the first development or production build and while loading those remote assets.
+
+##  Available Commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Create an optimized production build |
+| `npm run start` | Run the production build |
+| `npm run lint` | Run ESLint |
+
+##  Run the Production Build Locally
+
+```bash
+npm run build
+npm run start
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+##  Privacy Approach
+
+LifeLink does not display donor phone numbers publicly. The donor-details page provides a contact-request form containing:
+
+- Patient name
+- Hospital or location
+- Urgency level
+
+In the current frontend MVP, submission is simulated and no request is stored in a database.
+
+##  Medical Disclaimer
+
+LifeLink is a donor discovery and communication interface. It does not conduct medical screening, verify blood compatibility, determine donation eligibility, or replace certified hospitals and healthcare professionals. Blood collection and transfusion must be handled by qualified medical professionals or authorized blood banks.
