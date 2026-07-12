@@ -183,7 +183,3 @@ LifeLink does not display donor phone numbers publicly. The donor-details page p
 - Urgency level
 
 In the current frontend MVP, submission is simulated and no request is stored in a database.
-
-##  Medical Disclaimer
-
-LifeLink is a donor discovery and communication interface. It does not conduct medical screening, verify blood compatibility, determine donation eligibility, or replace certified hospitals and healthcare professionals. Blood collection and transfusion must be handled by qualified medical professionals or authorized blood banks.
