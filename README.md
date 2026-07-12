@@ -6,15 +6,14 @@ The platform focuses on donor availability, privacy, and secure contact requests
 
 ---
 
-## 🌐 Live Demo
+##  Live Demo
 
-**Live Website: https://life-link-cyan-two.vercel.app
+Live Website: https://life-link-cyan-two.vercel.app"
 
-**GitHub Repository: https://github.com/raselahmed2023/Life-Link
+GitHub Repository: https://github.com/raselahmed2023/Life-Link
 
 ---
-
-## 📌 Project Overview
+##  Project Overview
 
 During a medical emergency, finding the correct blood donor quickly can be difficult.
 
@@ -22,7 +21,7 @@ Many existing donor lists contain outdated information, unavailable donors, or p
 
 ---
 
-## ✨ Core Features
+##  Core Features
 
 - Search donors by blood group
 - Search donors by district and area
@@ -39,7 +38,7 @@ Many existing donor lists contain outdated information, unavailable donors, or p
 
 ---
 
-## 🔐 Privacy-Focused Contact System
+##  Privacy-Focused Contact System
 
 LifeLink does not publicly display donor phone numbers.
 
@@ -51,11 +50,10 @@ The contact process works like this:
 4. The donor reviews the request.
 5. Contact information is shared only after approval.
 
-> The current frontend version simulates this interaction. Backend integration will be added later.
 
 ---
 
-## 🛠️ Technologies Used
+##  Technologies Used
 
 ### Frontend
 
@@ -78,7 +76,7 @@ The contact process works like this:
 
 ---
 
-## 📄 Available Pages
+##  Available Pages
 
 | Page | Route | Description |
 |------|-------|-------------|
@@ -109,7 +107,7 @@ The homepage includes:
 
 ---
 
-## 🔎 Donor Search
+##  Donor Search
 
 Users can filter donors using:
 
@@ -120,3 +118,5 @@ Users can filter donors using:
 - Availability status
 - Recently confirmed status
 
+
+## Backend integration will be added later.
