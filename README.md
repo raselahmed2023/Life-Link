@@ -8,8 +8,8 @@ The platform focuses on donor availability, privacy, and secure contact requests
 
 ## 🌐 Live Demo
 
-**Live Website:
-**GitHub Repository:
+**Live Website: https://life-link-cyan-two.vercel.app
+**GitHub Repository: https://github.com/raselahmed2023/Life-Link
 
 ---
 
