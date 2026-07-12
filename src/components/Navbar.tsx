@@ -48,15 +48,13 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
           href="/"
           onClick={closeMenu}
           aria-label="LifeLink homepage"
-          className="inline-flex items-center transition-transform hover:scale-105"
+          className="inline-flex items-center transition-transform hover:scale-105 gap-2"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#910102] text-white">
             <Droplet size={23} fill="currentColor" />
           </span>
 
-          <span className="text-2xl font-bold text-[#910102]">
-            LifeLink
-          </span>
+          <span className="text-2xl font-bold text-[#910102]"> LifeLink </span>
         </Link>
 
 
