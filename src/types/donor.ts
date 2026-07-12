@@ -17,4 +17,9 @@ export type Donor = {
   donations: number;
   lastDonation: string;
   joinedRank: number;
+
+  preferredContact?: string;
+  availabilityTime?: string;
+  weight?: string;
+  healthStatus?: string;
 };
