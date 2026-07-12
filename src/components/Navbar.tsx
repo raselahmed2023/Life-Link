@@ -50,12 +50,12 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
           aria-label="LifeLink homepage"
           className="inline-flex items-center transition-transform hover:scale-105"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-200 shadow-sm">
-            <Droplet
-              size={23}
-              strokeWidth={2}
-              className="fill-red-800 text-red-900"
-            />
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#910102] text-white">
+            <Droplet size={23} fill="currentColor" />
+          </span>
+
+          <span className="text-2xl font-bold text-[#910102]">
+            LifeLink
           </span>
         </Link>
 
@@ -190,19 +190,19 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
                 </button>
               </>
             ) : (
-                <Link
-                  href="/login"
-                  onClick={closeMenu}
-                  className="rounded-lg px-4 py-3 text-center text-sm font-semibold text-red-700 transition hover:bg-red-50"
-                >
-                  Login
-                </Link>
+              <Link
+                href="/login"
+                onClick={closeMenu}
+                className="rounded-lg px-4 py-3 text-center text-sm font-semibold text-red-700 transition hover:bg-red-50"
+              >
+                Login
+              </Link>
             )}
           </div>
         </div>
       )}
 
-      
+
     </header>
   );
 }
