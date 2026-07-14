@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bell, Droplet, Menu, UserCircle, X,
-} from "lucide-react";
+import { Bell, Droplet, Menu, UserCircle, X } from "lucide-react";
 import { useState } from "react";
 
 type NavbarProps = {
   isLoggedIn?: boolean;
 };
 
-const navLinks = [
+type NavLink = {
+  label: string;
+  href: string;
+};
+
+const navLinks: NavLink[] = [
   {
     label: "Home",
     href: "/",
@@ -19,17 +22,22 @@ const navLinks = [
   {
     label: "Find Donors",
     href: "/donors",
-  }
+  },
 ];
 
-export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
+export default function Navbar({
+  isLoggedIn = false,
+}: NavbarProps) {
   const pathname = usePathname();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [isMenuOpen, setIsMenuOpen] =
+    useState(false);
 
   const isActiveRoute = (href: string) => {
     if (href === "/") {
       return pathname === "/";
     }
+
     return pathname.startsWith(href);
   };
 
@@ -41,79 +49,26 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
     <header className="sticky top-0 z-50 w-full border-b border-red-100 bg-white/95 backdrop-blur">
       <nav
         aria-label="Main navigation"
-        className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
+        className="mx-auto flex min-h-[72px] max-w-7xl flex-wrap items-center justify-between px-4 sm:px-6 lg:px-8"
       >
         {/* Logo */}
         <Link
           href="/"
           onClick={closeMenu}
           aria-label="LifeLink homepage"
-          className="inline-flex items-center transition-transform hover:scale-105 gap-2"
+          className="inline-flex items-center gap-2 transition-transform hover:scale-105"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#910102] text-white">
-            <Droplet size={23} fill="currentColor" />
+            <Droplet
+              size={23}
+              fill="currentColor"
+            />
           </span>
 
-          <span className="text-2xl font-bold text-[#910102]"> LifeLink </span>
+          <span className="text-2xl font-bold text-[#910102]">
+            LifeLink
+          </span>
         </Link>
-
-
-        {/* Desktop navigation */}
-        <div className="hidden h-full items-center gap-8 md:flex">
-          {navLinks.map((link) => {
-            const isActive = isActiveRoute(link.href);
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={isActive ? "page" : undefined}
-                className={`flex h-full items-center border-b-2 text-sm font-semibold transition-colors ${isActive
-                  ? "border-red-700 text-red-700"
-                  : "border-transparent text-slate-700 hover:border-red-300 hover:text-red-700"
-                  }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </div>
-
-
-        {/* Desktop actions */}
-        <div className="hidden items-center gap-3 md:flex">
-          {isLoggedIn ? (
-            <>
-              <button
-                type="button"
-                aria-label="View notifications"
-                className="rounded-full p-2 text-slate-700 transition hover:bg-slate-100 hover:text-red-700"
-              >
-                <Bell size={21} />
-              </button>
-
-              <Link
-                href="/dashboard/donor-profile"
-                className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${pathname.startsWith("/dashboard/donor-profile")
-                  ? "border-red-700 bg-red-50 text-red-700"
-                  : "border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-700"
-                  }`}
-              >
-                <UserCircle size={21} />
-                Profile
-              </Link>
-            </>
-          ) : (
-
-            <Link
-              href="/login"
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-            >
-              Login
-            </Link>
-          )}
-        </div>
-
 
         {/* Mobile menu button */}
         <button
@@ -124,9 +79,12 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
               : "Open navigation menu"
           }
           aria-expanded={isMenuOpen}
-          aria-controls="mobile-navigation"
+          aria-controls="main-navigation"
           onClick={() =>
-            setIsMenuOpen((previousState) => !previousState)
+            setIsMenuOpen(
+              (previousState) =>
+                !previousState
+            )
           }
           className="rounded-lg p-2 text-slate-700 transition hover:bg-slate-100 md:hidden"
         >
@@ -137,70 +95,93 @@ export default function Navbar({ isLoggedIn = false, }: NavbarProps) {
           )}
         </button>
 
-
-      </nav>
-
-      {/* Mobile navigation */}
-      {isMenuOpen && (
+        {/* One shared navigation */}
         <div
-          id="mobile-navigation"
-          className="border-t border-slate-100 bg-white px-4 py-4 shadow-lg md:hidden"
+          id="main-navigation"
+          className={`order-3 w-full flex-col gap-1 border-t border-slate-100 py-4 md:order-none md:ml-10 md:flex md:w-auto md:flex-1 md:flex-row md:items-center md:justify-between md:border-0 md:py-0 ${
+            isMenuOpen
+              ? "flex"
+              : "hidden"
+          }`}
         >
-          <div className="mx-auto flex max-w-7xl flex-col gap-1">
+          {/* Navigation links */}
+          <div className="flex flex-col gap-1 md:h-[72px] md:flex-row md:items-center md:gap-8">
             {navLinks.map((link) => {
-              const isActive = isActiveRoute(link.href);
+              const isActive =
+                isActiveRoute(link.href);
 
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={closeMenu}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`rounded-lg px-4 py-3 text-sm font-semibold transition ${isActive
-                    ? "bg-red-50 text-red-700"
-                    : "text-slate-700 hover:bg-slate-50 hover:text-red-700"
-                    }`}
+                  aria-current={
+                    isActive
+                      ? "page"
+                      : undefined
+                  }
+                  className={`rounded-lg px-4 py-3 text-sm font-semibold transition md:flex md:h-full md:items-center md:rounded-none md:border-b-2 md:px-0 md:py-0 ${
+                    isActive
+                      ? "bg-red-50 text-red-700 md:border-red-700 md:bg-transparent"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-red-700 md:border-transparent md:hover:border-red-300 md:hover:bg-transparent"
+                  }`}
                 >
                   {link.label}
                 </Link>
               );
             })}
+          </div>
 
-            <div className="my-3 border-t border-slate-200" />
-
+          {/* Account actions */}
+          <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3 md:mt-0 md:flex-row md:items-center md:border-0 md:pt-0">
             {isLoggedIn ? (
               <>
+                <button
+                  type="button"
+                  aria-label="View notifications"
+                  className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-red-700 md:rounded-full md:p-2"
+                >
+                  <Bell size={21} />
+
+                  <span className="md:hidden">
+                    Notifications
+                  </span>
+                </button>
+
                 <Link
                   href="/dashboard/donor-profile"
                   onClick={closeMenu}
-                  className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-red-50 hover:text-red-700"
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition md:rounded-full md:px-3 md:py-2 ${
+                    pathname.startsWith(
+                      "/dashboard/donor-profile"
+                    )
+                      ? "border-red-700 bg-red-50 text-red-700"
+                      : "border-slate-200 text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                  }`}
                 >
-                  <UserCircle size={20} />
-                  My Donor Profile
-                </Link>
+                  <UserCircle size={21} />
 
-                <button
-                  type="button"
-                  className="flex items-center gap-2 rounded-lg px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-red-700"
-                >
-                  <Bell size={20} />
-                  Notifications
-                </button>
+                  <span className="md:hidden">
+                    My Donor Profile
+                  </span>
+
+                  <span className="hidden md:inline">
+                    Profile
+                  </span>
+                </Link>
               </>
             ) : (
               <Link
                 href="/login"
                 onClick={closeMenu}
-                className="rounded-lg px-4 py-3 text-center text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                className="rounded-lg px-4 py-3 text-center text-sm font-semibold text-red-700 transition hover:bg-red-50 md:px-4 md:py-2.5"
               >
                 Login
               </Link>
             )}
           </div>
         </div>
-      )}
-
-
+      </nav>
     </header>
   );
 }
