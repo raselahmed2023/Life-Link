@@ -1,18 +1,20 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import {
   ArrowRight,
-  Droplet,
   Eye,
   EyeOff,
   Heart,
-  LoaderCircle,
   LockKeyhole,
   Mail,
 } from "lucide-react";
+
+import Logo from "@/components/Logo";
+import HeartLoader from "@/components/ui/HeartLoader";
+import { apiRequest } from "@/lib/api";
 
 const loginBackground =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAm15R-k29kaj1FZvOlPbGDILtqwFyvBdv7W4pMZuDWRsRUfLMF5jwripChix8dXh9mig987yUmNe-C9VZmMWyLJs23AmhpA4JdPn8r5VaAUGtftlDjb0h2v9HcUI-8ErIMeIEnMSaC-aLkAPhmTEyE4414Or8FB3WBSPGnMjPK5WhZ_i3BxSdd2sWe9BSQnVF83kyA44LGRyAzZ_yxyjBIu4dET4zIpl5UixKxRZ9cnsXVeHwE2SU";
@@ -23,19 +25,98 @@ const donorOne =
 const donorTwo =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuC8I9u20BZPvyEEGcG7woBONZwMAq3KHghpHiELgNBTxAZGX8Csy2jqttESaM0xS0d1Y6cdfQsWEYRHGCNPniEZX-rHnECGBM4g8dueKNRtWUTZfaVORjziTjutQa3wkSrwdr34WYxhxKL8OSCqCDYUkqialS9VM2txsFposbUcBcFcLn4S1m_rMQtjTVqYTGgL0sNiBzXq9AelNCF9r7m7mca_IW8GoveMfMD441xUSipRmxqpvTE";
 
-export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+type LoginResponse = {
+  success: boolean;
+  message: string;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  data: {
+    token: string;
+
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      phone: string | null;
+      role: string;
+      status: string;
+    };
+  };
+};
+
+export default function LoginPage() {
+  const router = useRouter();
+
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
+
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] = useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
+    setError("");
     setIsSubmitting(true);
 
-    // Temporary frontend interaction.
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    const formData =
+      new FormData(
+        event.currentTarget
+      );
 
-    setIsSubmitting(false);
+    const email = String(
+      formData.get("email") || ""
+    );
+
+    const password = String(
+      formData.get("password") || ""
+    );
+
+    try {
+      const response =
+        await apiRequest<LoginResponse>(
+          "/api/auth/login",
+          {
+            method: "POST",
+
+            body: JSON.stringify({
+              email,
+              password,
+            }),
+          }
+        );
+
+      localStorage.setItem(
+        "lifelink_token",
+        response.data.token
+      );
+
+      localStorage.setItem(
+        "lifelink_user",
+        JSON.stringify(
+          response.data.user
+        )
+      );
+
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Login failed"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -58,19 +139,24 @@ export default function LoginPage() {
             <div className="mb-6">
               <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 backdrop-blur-md">
                 <Heart size={18} />
+
                 <span className="text-xs font-semibold uppercase tracking-wider">
                   Save Lives
                 </span>
               </span>
 
               <h1 className="max-w-md text-4xl font-bold leading-tight md:text-5xl">
-                Welcome back to LifeLink.
+                Welcome back to
+                LifeLink.
               </h1>
             </div>
 
             <p className="max-w-md text-lg leading-7 text-white/90">
-              Your contribution helps save lives across Bangladesh. Log in to
-              manage your requests and connect with donors.
+              Your contribution helps
+              save lives across
+              Bangladesh. Log in to
+              manage your requests and
+              connect with donors.
             </p>
 
             <div className="mt-12 flex items-center gap-4 border-t border-white/20 pt-8">
@@ -93,7 +179,8 @@ export default function LoginPage() {
               </div>
 
               <p className="text-sm font-semibold">
-                Join 5,000+ active donors today.
+                Join thousands of active
+                donors today.
               </p>
             </div>
           </div>
@@ -103,29 +190,31 @@ export default function LoginPage() {
         <section className="flex w-full items-center bg-white p-8 md:w-1/2 md:p-16">
           <div className="mx-auto w-full max-w-[400px]">
             <div className="mb-10">
-              <Link
-                href="/"
-                className="mb-3 inline-flex items-center gap-2"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#910102] text-white">
-                  <Droplet size={21} fill="currentColor" />
-                </span>
-
-                <span className="text-2xl font-bold text-[#910102]">
-                  LifeLink
-                </span>
-              </Link>
+              <div className="mb-6">
+                <Logo />
+              </div>
 
               <h2 className="text-3xl font-bold text-[#191C1E]">
                 Account Login
               </h2>
 
               <p className="mt-2 text-base text-[#49607C]">
-                Enter your credentials to access your dashboard.
+                Enter your credentials
+                to access your account.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                {error}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+            >
+              {/* Email */}
               <div className="space-y-2">
                 <label
                   htmlFor="email"
@@ -151,22 +240,14 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-4">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold text-[#191C1E]"
-                  >
-                    Password
-                  </label>
-
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-[#910102] hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-[#191C1E]"
+                >
+                  Password
+                </label>
 
                 <div className="relative">
                   <LockKeyhole
@@ -177,7 +258,11 @@ export default function LoginPage() {
                   <input
                     id="password"
                     name="password"
-                    type={showPassword ? "text" : "password"}
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
                     required
                     placeholder="Enter your password"
                     className="w-full rounded-[10px] border border-[#E3BEB8] bg-white py-3 pl-10 pr-12 text-base outline-none transition focus:border-[#B42318] focus:ring-2 focus:ring-[#B42318]/20"
@@ -185,14 +270,18 @@ export default function LoginPage() {
 
                   <button
                     type="button"
-                    onClick={() => setShowPassword((previous) => !previous)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
+                    onClick={() =>
+                      setShowPassword(
+                        (previous) =>
+                          !previous
+                      )
                     }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#49607C] transition hover:text-[#910102]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#49607C] hover:text-[#910102]"
                   >
                     {showPassword ? (
-                      <EyeOff size={20} />
+                      <EyeOff
+                        size={20}
+                      />
                     ) : (
                       <Eye size={20} />
                     )}
@@ -200,44 +289,36 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <label className="flex cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-[#E3BEB8] text-[#910102] focus:ring-[#910102]"
-                />
-
-                <span className="text-base text-[#49607C]">
-                  Remember me for 30 days
-                </span>
-              </label>
-
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#A90000] py-4 font-bold text-white transition hover:bg-[#910102] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSubmitting ? (
-                  <>
-                    <LoaderCircle size={21} className="animate-spin" />
-                    Logging in...
-                  </>
+                  <HeartLoader text="Logging in..." />
                 ) : (
                   <>
                     Login
-                    <ArrowRight size={21} />
+
+                    <ArrowRight
+                      size={21}
+                    />
                   </>
                 )}
               </button>
             </form>
 
             <p className="mt-10 text-center text-base text-[#49607C]">
-              Don&apos;t have an account?{" "}
-              <Link
+              Don&apos;t have an
+              account?{" "}
+
+              <a
                 href="/register"
                 className="font-bold text-[#910102] hover:underline"
               >
                 Register
-              </Link>
+              </a>
             </p>
           </div>
         </section>

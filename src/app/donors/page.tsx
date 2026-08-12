@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Suspense } from "react";
+
 import DonorFilterPanel from "@/components/donors/DonorFilterPanel";
 import DonorResultsGrid from "@/components/donors/DonorResultsGrid";
+import HeartLoader from "@/components/ui/HeartLoader";
 
 export default function DonorsPage() {
   return (
@@ -32,33 +34,38 @@ export default function DonorsPage() {
           </h1>
 
           <p className="mt-3 max-w-3xl leading-7 text-[#5A403C]">
-            Our donor directory is based on
-            self-reported availability. Please
-            confirm the donor&apos;s current status
-            and health before making any urgent
-            medical arrangements.
+            Search for available blood donors by blood group
+            and location. Donor contact information remains
+            protected until a valid contact request is made.
           </p>
         </header>
 
+        {/* Donor filter */}
         <Suspense
           fallback={
-            <div className="mb-8 h-64 animate-pulse rounded-2xl bg-white" />
+            <div className="mb-8 flex min-h-[220px] items-center justify-center rounded-2xl border border-red-100 bg-white shadow-sm">
+              <div className="text-[#910102]">
+                <HeartLoader
+                  text="Preparing donor search..."
+                  size={30}
+                />
+              </div>
+            </div>
           }
         >
           <DonorFilterPanel />
         </Suspense>
 
+        {/* Donor results */}
         <Suspense
           fallback={
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {Array.from({
-                length: 8,
-              }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-[390px] animate-pulse rounded-2xl bg-white"
+            <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-red-100 bg-white shadow-sm">
+              <div className="text-[#910102]">
+                <HeartLoader
+                  text="Finding available donors..."
+                  size={34}
                 />
-              ))}
+              </div>
             </div>
           }
         >

@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { Droplet, Mail } from "lucide-react";
+import {
+  HeartHandshake,
+  Mail,
+  MapPin,
+} from "lucide-react";
 import { FaFacebookF } from "react-icons/fa6";
+
+import Logo from "@/components/Logo";
 
 type FooterLink = {
   label: string;
@@ -20,30 +26,26 @@ const footerLinks = {
     },
     {
       label: "Become a Donor",
-      href: "/register",
+      href: "/become-donor",
     },
     {
-      label: "Success Stories",
-      href: "/",
+      label: "Request Blood",
+      href: "/blood-request",
     },
   ],
 
   resources: [
     {
-      label: "About LifeLink",
-      href: "/",
+      label: "How It Works",
+      href: "/#how-it-works",
     },
     {
-      label: "How It Works",
-      href: "/",
+      label: "Success Stories",
+      href: "/#success-stories",
     },
     {
       label: "FAQs",
-      href: "/",
-    },
-    {
-      label: "Contact Us",
-      href: "/",
+      href: "/#faq",
     },
   ],
 
@@ -61,72 +63,83 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-[#E3BEB8] bg-[#F2F4F6]">
+    <footer className="border-t border-[#E9D0CC] bg-[#F8FAFC]">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
-        {/* Brand section */}
         <div>
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#910102] text-white">
-              <Droplet size={23} fill="currentColor" />
-            </span>
-
-            <span className="text-2xl font-bold text-[#910102]">
-              LifeLink
-            </span>
-          </Link>
+          <Logo />
 
           <p className="mt-5 max-w-sm text-sm leading-7 text-[#49607C]">
-            Connecting heroes with those in need across Bangladesh. A platform
-            built on trust, privacy, and community.
+            Connecting blood donors with people in need
+            across Bangladesh through a safer, faster,
+            and privacy-focused platform.
           </p>
 
-          {/* Social icons */}
+          <div className="mt-5 space-y-3 text-sm text-[#49607C]">
+            <div className="flex items-center gap-2">
+              <MapPin
+                size={17}
+                className="text-[#910102]"
+              />
+              Bangladesh
+            </div>
+
+            <div className="flex items-center gap-2">
+              <HeartHandshake
+                size={17}
+                className="text-[#910102]"
+              />
+              Built to connect and save lives
+            </div>
+          </div>
+
           <div className="mt-6 flex items-center gap-3">
             <a
               href="https://www.facebook.com/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Visit LifeLink Facebook page"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6E8EA] text-[#910102] transition hover:bg-[#910102] hover:text-white"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#910102] shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-[#910102] hover:text-white"
             >
-              <FaFacebookF size={18} />
+              <FaFacebookF size={17} />
             </a>
 
             <a
               href="mailto:support@lifelink.com"
               aria-label="Email LifeLink"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6E8EA] text-[#910102] transition hover:bg-[#910102] hover:text-white"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#910102] shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-[#910102] hover:text-white"
             >
-              <Mail size={19} />
+              <Mail size={18} />
             </a>
           </div>
         </div>
 
-        {/* Platform links */}
         <FooterColumn
           title="Platform"
           links={footerLinks.platform}
         />
 
-        {/* Resource links */}
         <FooterColumn
           title="Resources"
           links={footerLinks.resources}
         />
 
-        {/* Legal links */}
         <FooterColumn
           title="Legal"
           links={footerLinks.legal}
         />
       </div>
 
-      {/* Bottom copyright */}
-      <div className="border-t border-[#E3BEB8]">
-        <div className="mx-auto max-w-7xl px-4 py-6 text-center sm:px-6 md:text-left lg:px-8">
-          <p className="text-sm text-[#49607C]">
-            © {new Date().getFullYear()} LifeLink. All rights reserved.
-            Connecting heroes with those in need across Bangladesh.
+      <div className="border-t border-[#E9D0CC]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-[#64748B] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <p>
+            © {new Date().getFullYear()} LifeLink.
+            All rights reserved.
+          </p>
+
+          <p className="flex items-center gap-1.5">
+            Made with
+            <span className="text-[#A90000]">♥</span>
+            for communities across Bangladesh.
           </p>
         </div>
       </div>
@@ -149,7 +162,7 @@ function FooterColumn({
           <li key={link.label}>
             <Link
               href={link.href}
-              className="text-sm text-[#49607C] transition hover:text-[#910102] hover:underline"
+              className="text-sm text-[#49607C] transition hover:text-[#910102]"
             >
               {link.label}
             </Link>

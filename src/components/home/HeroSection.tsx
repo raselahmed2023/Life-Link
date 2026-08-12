@@ -36,7 +36,7 @@ export default function HeroSection() {
               </Link>
 
               <Link
-                href="/register"
+                href="/become-donor"
                 className="inline-flex min-h-14 items-center justify-center rounded-[10px] border-2 border-[#102A43] px-8 py-4 text-sm font-bold text-[#102A43] transition hover:bg-[#102A43] hover:text-white active:scale-[0.98]"
               >
                 Become a Donor

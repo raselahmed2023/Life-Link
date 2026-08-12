@@ -1,0 +1,310 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  Droplets,
+  Hospital,
+  MapPin,
+  Phone,
+} from "lucide-react";
+
+import HeartLoader from "@/components/ui/HeartLoader";
+import { apiRequest } from "@/lib/api";
+import { bloodGroupToLabel } from "@/lib/bloodGroup";
+import type { ApiBloodGroup } from "@/types/donor";
+
+type BloodRequest = {
+  id: string;
+  userId: string;
+  patientName: string;
+  bloodGroup: ApiBloodGroup;
+  hospital: string;
+  district: string;
+  requiredDate: string;
+  phone: string;
+  message: string | null;
+  status:
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED"
+    | "COMPLETED";
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BloodRequestResponse = {
+  success: boolean;
+  message: string;
+  data: BloodRequest[];
+};
+
+export default function BloodRequestsPage() {
+  const [requests, setRequests] =
+    useState<BloodRequest[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const response =
+          await apiRequest<BloodRequestResponse>(
+            "/api/blood-requests?status=APPROVED"
+          );
+
+        setRequests(response.data);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load blood requests"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-[#F8FAFC]">
+      {/* Hero */}
+      <section className="border-b border-red-100 bg-gradient-to-br from-[#FFF7F6] via-white to-[#F8FAFC]">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-bold text-[#910102]">
+              <Droplets size={17} />
+              Emergency Blood Requests
+            </span>
+
+            <h1 className="mt-5 text-4xl font-black tracking-tight text-[#102A43] sm:text-5xl">
+              People are waiting for help
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-[#64748B]">
+              Browse approved blood requests
+              and help connect patients with
+              suitable donors.
+            </p>
+
+            <Link
+              href="/blood-request"
+              className="mt-7 inline-flex items-center justify-center rounded-xl bg-[#A90000] px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#910102] hover:shadow-lg"
+            >
+              Request Blood
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
+              Active Requests
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
+              Approved blood requests
+            </h2>
+          </div>
+
+          {!isLoading && (
+            <p className="text-sm font-semibold text-[#64748B]">
+              {requests.length} request
+              {requests.length !== 1
+                ? "s"
+                : ""}
+            </p>
+          )}
+        </div>
+
+        {isLoading && (
+          <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-red-100 bg-white text-[#910102]">
+            <HeartLoader
+              text="Finding blood requests..."
+              size={32}
+            />
+          </div>
+        )}
+
+        {!isLoading && error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center font-semibold text-red-700">
+            {error}
+          </div>
+        )}
+
+        {!isLoading &&
+          !error &&
+          requests.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-[#D7DEE7] bg-white px-6 py-16 text-center">
+              <Droplets
+                size={46}
+                className="mx-auto text-[#910102]"
+              />
+
+              <h3 className="mt-5 text-xl font-bold text-[#102A43]">
+                No approved requests
+                right now
+              </h3>
+
+              <p className="mt-2 text-[#64748B]">
+                Approved emergency
+                requests will appear here.
+              </p>
+            </div>
+          )}
+
+        {!isLoading &&
+          !error &&
+          requests.length > 0 && (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {requests.map(
+                (request) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                  />
+                )
+              )}
+            </div>
+          )}
+      </section>
+    </main>
+  );
+}
+
+function RequestCard({
+  request,
+}: {
+  request: BloodRequest;
+}) {
+  const requiredDate =
+    new Date(
+      request.requiredDate
+    ).toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-[#E7E9EE] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-red-200 hover:shadow-xl">
+      <div className="border-b border-red-100 bg-gradient-to-r from-red-50 to-white p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#910102] px-3 py-1.5 text-xs font-bold text-white">
+              <AlertTriangle
+                size={14}
+              />
+              Blood Needed
+            </span>
+
+            <h3 className="mt-4 text-xl font-bold text-[#102A43]">
+              {request.patientName}
+            </h3>
+          </div>
+
+          <div className="flex h-14 min-w-14 items-center justify-center rounded-2xl bg-[#910102] px-3 text-lg font-black text-white shadow-sm">
+            {
+              bloodGroupToLabel[
+                request.bloodGroup
+              ]
+            }
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-6">
+        <div className="space-y-4">
+          <InfoRow
+            icon={
+              <Hospital size={18} />
+            }
+            label="Hospital"
+            value={request.hospital}
+          />
+
+          <InfoRow
+            icon={<MapPin size={18} />}
+            label="District"
+            value={request.district}
+          />
+
+          <InfoRow
+            icon={
+              <CalendarDays
+                size={18}
+              />
+            }
+            label="Required Date"
+            value={requiredDate}
+          />
+
+          <InfoRow
+            icon={<Phone size={18} />}
+            label="Contact"
+            value={request.phone}
+          />
+        </div>
+
+        {request.message && (
+          <div className="mt-5 rounded-xl bg-[#F8FAFC] p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#64748B]">
+              Additional information
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-[#49607C]">
+              {request.message}
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 border-t border-slate-100 pt-4">
+          <span className="inline-flex rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">
+            Approved Request
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#910102]">
+        {icon}
+      </div>
+
+      <div>
+        <p className="text-xs text-[#64748B]">
+          {label}
+        </p>
+
+        <p className="mt-0.5 font-semibold text-[#102A43]">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}

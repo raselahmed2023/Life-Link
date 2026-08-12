@@ -1,11 +1,11 @@
 "use client";
 
+import type { FormEvent } from "react";
+import { useState } from "react";
 import {
-  FormEvent,
-  useState,
-} from "react";
-import {
+  RotateCcw,
   Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   useRouter,
@@ -17,10 +17,10 @@ const bloodGroups = [
   "A-",
   "B+",
   "B-",
-  "O+",
-  "O-",
   "AB+",
   "AB-",
+  "O+",
+  "O-",
 ];
 
 const districts = [
@@ -32,29 +32,6 @@ const districts = [
   "Barishal",
   "Rangpur",
   "Mymensingh",
-];
-
-type SortOption =
-  | "recent"
-  | "newest"
-  | "donations";
-
-const sortOptions: {
-  label: string;
-  value: SortOption;
-}[] = [
-  {
-    label: "Recently Confirmed",
-    value: "recent",
-  },
-  {
-    label: "Newest",
-    value: "newest",
-  },
-  {
-    label: "Most Donations",
-    value: "donations",
-  },
 ];
 
 export default function DonorFilterPanel() {
@@ -72,18 +49,6 @@ export default function DonorFilterPanel() {
   const [district, setDistrict] = useState(
     searchParams.get("district") ?? ""
   );
-
-  const [availability, setAvailability] = useState(
-    searchParams.get("available") === "true"
-      ? "available"
-      : searchParams.get("availability") ?? ""
-  );
-
-  const [sortBy, setSortBy] =
-    useState<SortOption>(
-      (searchParams.get("sort") as SortOption) ??
-        "recent"
-    );
 
   const handleSubmit = (
     event: FormEvent<HTMLFormElement>
@@ -104,25 +69,17 @@ export default function DonorFilterPanel() {
       params.set("district", district);
     }
 
-    if (availability === "available") {
-      params.set("available", "true");
-    }
+    const query = params.toString();
 
-    if (availability === "recent") {
-      params.set("availability", "recent");
-    }
-
-    params.set("sort", sortBy);
-
-    router.push(`/donors?${params.toString()}`);
+    router.push(
+      query ? `/donors?${query}` : "/donors"
+    );
   };
 
   const handleClearFilters = () => {
     setSearch("");
     setBloodGroup("");
     setDistrict("");
-    setAvailability("");
-    setSortBy("recent");
 
     router.push("/donors");
   };
@@ -130,15 +87,41 @@ export default function DonorFilterPanel() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-8 rounded-2xl border border-[#E3BEB8] bg-white p-6 shadow-sm"
+      className="mb-8 rounded-2xl border border-[#E9D0CC] bg-white p-5 shadow-sm sm:p-6"
     >
-      {/* Main filters */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Search */}
-        <div className="space-y-2">
+      <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div>
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal
+              size={20}
+              className="text-[#910102]"
+            />
+
+            <h2 className="text-lg font-bold text-[#102A43]">
+              Search Donors
+            </h2>
+          </div>
+
+          <p className="mt-1 text-sm text-[#64748B]">
+            Find donors by name, blood group, or location.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleClearFilters}
+          className="inline-flex items-center gap-2 self-start rounded-lg px-3 py-2 text-sm font-semibold text-[#64748B] transition hover:bg-red-50 hover:text-[#910102] sm:self-auto"
+        >
+          <RotateCcw size={16} />
+          Clear
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+        <div>
           <label
             htmlFor="donorSearch"
-            className="block text-sm font-semibold text-[#102A43]"
+            className="mb-2 block text-sm font-semibold text-[#102A43]"
           >
             Search
           </label>
@@ -146,7 +129,7 @@ export default function DonorFilterPanel() {
           <div className="relative">
             <Search
               size={19}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A403C]"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]"
             />
 
             <input
@@ -156,17 +139,16 @@ export default function DonorFilterPanel() {
               onChange={(event) =>
                 setSearch(event.target.value)
               }
-              placeholder="Name, District, or Area"
-              className="h-12 w-full rounded-[10px] border border-[#8F706B] bg-white pl-10 pr-4 outline-none transition focus:border-[#910102] focus:ring-2 focus:ring-[#910102]/20"
+              placeholder="Name, district or area"
+              className="h-12 w-full rounded-xl border border-[#D7DEE7] bg-[#FBFCFD] pl-10 pr-4 text-sm text-[#102A43] outline-none transition placeholder:text-[#94A3B8] focus:border-[#B42318] focus:bg-white focus:ring-2 focus:ring-[#B42318]/10"
             />
           </div>
         </div>
 
-        {/* Blood group */}
-        <div className="space-y-2">
+        <div>
           <label
             htmlFor="bloodGroup"
-            className="block text-sm font-semibold text-[#102A43]"
+            className="mb-2 block text-sm font-semibold text-[#102A43]"
           >
             Blood Group
           </label>
@@ -177,7 +159,7 @@ export default function DonorFilterPanel() {
             onChange={(event) =>
               setBloodGroup(event.target.value)
             }
-            className="h-12 w-full cursor-pointer rounded-[10px] border border-[#8F706B] bg-white px-4 outline-none transition focus:border-[#910102] focus:ring-2 focus:ring-[#910102]/20"
+            className="h-12 w-full cursor-pointer rounded-xl border border-[#D7DEE7] bg-[#FBFCFD] px-4 text-sm text-[#102A43] outline-none transition focus:border-[#B42318] focus:bg-white focus:ring-2 focus:ring-[#B42318]/10"
           >
             <option value="">
               All Blood Groups
@@ -194,11 +176,10 @@ export default function DonorFilterPanel() {
           </select>
         </div>
 
-        {/* District */}
-        <div className="space-y-2">
+        <div>
           <label
             htmlFor="district"
-            className="block text-sm font-semibold text-[#102A43]"
+            className="mb-2 block text-sm font-semibold text-[#102A43]"
           >
             District
           </label>
@@ -209,7 +190,7 @@ export default function DonorFilterPanel() {
             onChange={(event) =>
               setDistrict(event.target.value)
             }
-            className="h-12 w-full cursor-pointer rounded-[10px] border border-[#8F706B] bg-white px-4 outline-none transition focus:border-[#910102] focus:ring-2 focus:ring-[#910102]/20"
+            className="h-12 w-full cursor-pointer rounded-xl border border-[#D7DEE7] bg-[#FBFCFD] px-4 text-sm text-[#102A43] outline-none transition focus:border-[#B42318] focus:bg-white focus:ring-2 focus:ring-[#B42318]/10"
           >
             <option value="">
               All Districts
@@ -226,84 +207,13 @@ export default function DonorFilterPanel() {
           </select>
         </div>
 
-        {/* Availability */}
-        <div className="space-y-2">
-          <label
-            htmlFor="availability"
-            className="block text-sm font-semibold text-[#102A43]"
-          >
-            Availability
-          </label>
-
-          <select
-            id="availability"
-            value={availability}
-            onChange={(event) =>
-              setAvailability(event.target.value)
-            }
-            className="h-12 w-full cursor-pointer rounded-[10px] border border-[#8F706B] bg-white px-4 outline-none transition focus:border-[#910102] focus:ring-2 focus:ring-[#910102]/20"
-          >
-            <option value="">
-              All Availability
-            </option>
-
-            <option value="available">
-              Available Now
-            </option>
-
-            <option value="recent">
-              Recently Confirmed
-            </option>
-          </select>
-        </div>
-      </div>
-
-      {/* Sorting and actions */}
-      <div className="mt-6 flex flex-col gap-6 border-t border-[#E3BEB8] pt-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <span className="text-sm font-semibold text-[#102A43]">
-            Sort by:
-          </span>
-
-          <div className="flex flex-wrap gap-2">
-            {sortOptions.map((option) => {
-              const isActive =
-                sortBy === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    setSortBy(option.value)
-                  }
-                  className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                    isActive
-                      ? "border-[#910102] bg-[#910102]/5 text-[#910102]"
-                      : "border-[#8F706B] text-[#5A403C] hover:bg-[#F2F4F6]"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            className="rounded-[10px] px-6 py-3 text-sm font-semibold text-[#5A403C] transition hover:bg-[#F2F4F6]"
-          >
-            Clear Filters
-          </button>
-
+        <div className="flex items-end">
           <button
             type="submit"
-            className="rounded-[10px] bg-[#910102] px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#B42318] active:scale-[0.98]"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#A90000] px-6 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#910102] hover:shadow-md active:translate-y-0 lg:w-auto"
           >
-            Apply Filters
+            <Search size={18} />
+            Search
           </button>
         </div>
       </div>

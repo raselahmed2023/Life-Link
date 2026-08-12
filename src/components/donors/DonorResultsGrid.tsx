@@ -1,23 +1,41 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  AlertTriangle,
-  CheckCircle2,
-  Info,
+  Heart,
   MapPin,
-  ShieldCheck,
+  Phone,
+  UserRound,
   X,
 } from "lucide-react";
-import { donors } from "@/data/donors";
-import type {
-  Donor,
-  DonorStatus,
-} from "@/types/donor";
+
+import { apiRequest } from "@/lib/api";
+import {
+  bloodGroupToApi,
+  bloodGroupToLabel,
+} from "@/lib/bloodGroup";
+import type { ApiDonor } from "@/types/donor";
+import HeartLoader from "@/components/ui/HeartLoader";
+import ContactRequestForm from "@/components/donors/ContactRequestForm";
+
+type DonorResponse = {
+  success: boolean;
+  message: string;
+  data: ApiDonor[];
+};
 
 export default function DonorResultsGrid() {
   const searchParams = useSearchParams();
+
+  const [donors, setDonors] = useState<ApiDonor[]>([]);
+  const [selectedDonor, setSelectedDonor] =
+    useState<ApiDonor | null>(null);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [error, setError] = useState("");
 
   const search =
     searchParams.get("search")?.toLowerCase() ?? "";
@@ -28,113 +46,116 @@ export default function DonorResultsGrid() {
   const district =
     searchParams.get("district") ?? "";
 
-  const availableOnly =
-    searchParams.get("available") === "true";
+  useEffect(() => {
+    const fetchDonors = async () => {
+      setIsLoading(true);
+      setError("");
 
-  const availability =
-    searchParams.get("availability") ?? "";
+      try {
+        const params = new URLSearchParams();
 
-  const sortBy =
-    searchParams.get("sort") ?? "recent";
+        if (bloodGroup) {
+          const apiBloodGroup =
+            bloodGroupToApi[bloodGroup];
 
-  const filteredDonors = donors
-    .filter((donor) => {
+          if (apiBloodGroup) {
+            params.set(
+              "bloodGroup",
+              apiBloodGroup
+            );
+          }
+        }
+
+        if (district) {
+          params.set("district", district);
+        }
+
+        const query = params.toString();
+
+        const response =
+          await apiRequest<DonorResponse>(
+            `/api/donors${
+              query ? `?${query}` : ""
+            }`
+          );
+
+        setDonors(response.data);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load donors"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDonors();
+  }, [bloodGroup, district]);
+
+  const filteredDonors =
+    donors.filter((donor) => {
+      if (!search) {
+        return true;
+      }
+
       const searchableText =
-        `${donor.name} ${donor.area} ${donor.district}`.toLowerCase();
+        `${donor.user.name} ${donor.district} ${
+          donor.area ?? ""
+        }`.toLowerCase();
 
-      const matchesSearch =
-        !search || searchableText.includes(search);
-
-      const matchesBloodGroup =
-        !bloodGroup ||
-        donor.bloodGroup === bloodGroup;
-
-      const matchesDistrict =
-        !district ||
-        donor.district === district;
-
-      const matchesAvailable =
-        !availableOnly ||
-        donor.status === "available";
-
-      const matchesRecent =
-        availability !== "recent" ||
-        donor.status === "available" ||
-        donor.status === "recent";
-
-      return (
-        matchesSearch &&
-        matchesBloodGroup &&
-        matchesDistrict &&
-        matchesAvailable &&
-        matchesRecent
-      );
-    })
-    .sort((firstDonor, secondDonor) => {
-      if (sortBy === "donations") {
-        return (
-          secondDonor.donations -
-          firstDonor.donations
-        );
-      }
-
-      if (sortBy === "newest") {
-        return (
-          secondDonor.joinedRank -
-          firstDonor.joinedRank
-        );
-      }
-
-      return (
-        firstDonor.confirmedRank -
-        secondDonor.confirmedRank
-      );
+      return searchableText.includes(search);
     });
 
-  const activeFilters = [
-    bloodGroup
-      ? `Blood Group: ${bloodGroup}`
-      : null,
-    district
-      ? `Location: ${district}`
-      : null,
-    availableOnly
-      ? "Available Now"
-      : null,
-    availability === "recent"
-      ? "Recently Confirmed"
-      : null,
-    search
-      ? `Search: ${searchParams.get("search")}`
-      : null,
-  ].filter(Boolean) as string[];
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-red-100 bg-white">
+        <div className="text-[#910102]">
+          <HeartLoader
+            text="Finding available donors..."
+            size={32}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+        <p className="font-semibold text-red-700">
+          {error}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* Results summary */}
-      <section className="mb-6 flex flex-wrap items-center gap-3">
-        <h2 className="mr-2 text-2xl font-bold text-[#102A43]">
-          {filteredDonors.length}{" "}
-          {filteredDonors.length === 1
-            ? "donor"
-            : "donors"}{" "}
-          found
-        </h2>
+      <section className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-[#102A43]">
+            {filteredDonors.length}{" "}
+            {filteredDonors.length === 1
+              ? "donor"
+              : "donors"}{" "}
+            found
+          </h2>
 
-        {activeFilters.map((filter) => (
-          <span
-            key={filter}
-            className="inline-flex items-center gap-2 rounded-full bg-[#C7DFFF] px-3 py-1.5 text-xs font-semibold text-[#314863]"
-          >
-            {filter}
-            <X size={14} />
-          </span>
-        ))}
+          <p className="mt-1 text-sm text-[#64748B]">
+            Showing currently available donor profiles.
+          </p>
+        </div>
       </section>
 
-      {/* No results */}
-      {filteredDonors.length === 0 && (
+      {filteredDonors.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#E3BEB8] bg-white px-6 py-16 text-center">
+          <Heart
+            size={44}
+            className="mx-auto mb-4 text-[#910102]"
+          />
+
           <h3 className="text-xl font-bold text-[#102A43]">
             No donors found
           </h3>
@@ -143,167 +164,172 @@ export default function DonorResultsGrid() {
             Try changing or clearing your filters.
           </p>
         </div>
-      )}
-
-      {/* Donor grid */}
-      {filteredDonors.length > 0 && (
-        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      ) : (
+        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredDonors.map((donor) => (
             <DonorCard
               key={donor.id}
               donor={donor}
+              onRequestContact={() =>
+                setSelectedDonor(donor)
+              }
             />
           ))}
         </section>
+      )}
+
+      {selectedDonor && (
+        <ContactModal
+          donor={selectedDonor}
+          onClose={() =>
+            setSelectedDonor(null)
+          }
+        />
       )}
     </>
   );
 }
 
-type DonorCardProps = {
-  donor: Donor;
-};
-
 function DonorCard({
   donor,
-}: DonorCardProps) {
-  const status = getStatusDetails(
-    donor.status
-  );
+  onRequestContact,
+}: {
+  donor: ApiDonor;
+  onRequestContact: () => void;
+}) {
+  const lastDonation =
+    donor.lastDonation
+      ? new Date(
+          donor.lastDonation
+        ).toLocaleDateString()
+      : "Not provided";
 
-  const StatusIcon = status.icon;
+  const initials = donor.user.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <article
-      className={`flex h-full flex-col rounded-2xl border border-[#E3BEB8] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${
-        donor.status === "pending"
-          ? "opacity-75"
-          : ""
-      }`}
-    >
-      {/* Photo and blood group */}
-      <div className="mb-4 flex items-start justify-between">
-        <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[#ECEEF0] bg-[#F2F4F6]">
-          <img
-            src={donor.image}
-            alt={`${donor.name} donor profile`}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
+    <article className="group flex h-full flex-col rounded-2xl border border-[#E3BEB8] bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <div className="mb-5 flex items-start justify-between">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-lg font-bold text-[#910102]">
+          {initials || (
+            <UserRound size={26} />
+          )}
         </div>
 
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#910102] text-base font-bold text-white shadow-sm">
-          {donor.bloodGroup}
+        <div className="flex h-12 min-w-12 items-center justify-center rounded-full bg-[#910102] px-3 text-sm font-extrabold text-white">
+          {
+            bloodGroupToLabel[
+              donor.bloodGroup
+            ]
+          }
         </div>
       </div>
 
-      {/* Name */}
-      <div className="mb-1 flex items-center gap-1.5">
-        <h3 className="text-lg font-bold text-[#102A43]">
-          {donor.name}
-        </h3>
+      <h3 className="text-lg font-bold text-[#102A43]">
+        {donor.user.name}
+      </h3>
 
-        {donor.verified && (
-          <ShieldCheck
-            size={18}
-            fill="currentColor"
-            className="text-[#15803D]"
-            aria-label="Verified donor"
-          />
-        )}
-      </div>
+      <p className="mt-2 flex items-center gap-1.5 text-sm text-[#5A403C]">
+        <MapPin size={16} />
 
-      {/* Location */}
-      <p className="mb-4 flex items-center gap-1 text-xs text-[#5A403C]">
-        <MapPin size={15} />
-
-        {donor.area}, {donor.district}
+        <span>
+          {donor.area
+            ? `${donor.area}, `
+            : ""}
+          {donor.district}
+        </span>
       </p>
 
-      {/* Status */}
-      <div
-        className={`mb-4 flex items-center gap-2 text-sm font-semibold ${status.color}`}
-      >
-        <StatusIcon
-          size={20}
-          fill={
-            donor.status === "available"
-              ? "currentColor"
-              : "none"
-          }
-        />
-
-        {status.label}
-      </div>
-
-      {/* Details */}
-      <div className="mb-6 grid flex-grow grid-cols-2 gap-x-2 gap-y-2 text-xs">
-        <span className="text-[#5A403C]">
-          Confirmed:
-        </span>
-
-        <span className="font-medium text-[#102A43]">
-          {donor.confirmedText}
-        </span>
-
-        <span className="text-[#5A403C]">
-          Donations:
-        </span>
-
-        <span className="font-medium text-[#102A43]">
-          {donor.donations}{" "}
-          {donor.donations === 1
-            ? "Time"
-            : "Times"}
-        </span>
-
-        <span className="text-[#5A403C]">
-          Last Donation:
-        </span>
-
-        <span className="font-medium text-[#102A43]">
-          {donor.lastDonation}
+      <div className="mt-4">
+        <span className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+          Available Now
         </span>
       </div>
 
-      <Link
-        href={`/donors/${donor.id}`}
-        className="flex w-full items-center justify-center rounded-[10px] border-2 border-[#910102] bg-white py-3 text-sm font-bold text-[#910102] transition hover:bg-[#910102]/5 active:scale-[0.98]"
+      <div className="my-5 space-y-3 border-y border-slate-100 py-4 text-sm">
+        <div className="flex justify-between gap-3">
+          <span className="text-[#5A403C]">
+            Last donation
+          </span>
+
+          <span className="text-right font-semibold text-[#102A43]">
+            {lastDonation}
+          </span>
+        </div>
+
+        <div className="flex justify-between gap-3">
+          <span className="text-[#5A403C]">
+            Contact
+          </span>
+
+          <span className="flex items-center gap-1 font-semibold text-[#102A43]">
+            <Phone size={14} />
+            Protected
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onRequestContact}
+        className="mt-auto flex w-full items-center justify-center rounded-[10px] border-2 border-[#910102] bg-white py-3 text-sm font-bold text-[#910102] transition hover:bg-[#910102] hover:text-white active:scale-[0.98]"
       >
-        View Details
-      </Link>
+        Request Contact
+      </button>
     </article>
   );
 }
 
-type StatusDetails = {
-  label: string;
-  color: string;
-  icon: typeof CheckCircle2;
-};
+function ContactModal({
+  donor,
+  onClose,
+}: {
+  donor: ApiDonor;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close contact request"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#64748B] shadow-md transition hover:bg-red-50 hover:text-[#910102]"
+        >
+          <X size={20} />
+        </button>
 
-function getStatusDetails(
-  status: DonorStatus
-): StatusDetails {
-  if (status === "available") {
-    return {
-      label: "Available Now",
-      color: "text-[#15803D]",
-      icon: CheckCircle2,
-    };
-  }
+        <div className="border-b border-slate-100 px-6 pb-5 pt-7 sm:px-8">
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#910102]">
+            Donor Contact Request
+          </span>
 
-  if (status === "recent") {
-    return {
-      label: "Recently Active",
-      color: "text-[#49607C]",
-      icon: Info,
-    };
-  }
+          <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
+            Contact {donor.user.name}
+          </h2>
 
-  return {
-    label: "Update Pending",
-    color: "text-[#B45309]",
-    icon: AlertTriangle,
-  };
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-[#64748B]">
+            <MapPin size={15} />
+
+            {donor.area
+              ? `${donor.area}, `
+              : ""}
+            {donor.district}
+          </p>
+        </div>
+
+        <div className="p-4 sm:p-6">
+          <ContactRequestForm
+            donorId={donor.id}
+            donorName={donor.user.name}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
