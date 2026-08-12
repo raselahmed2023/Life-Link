@@ -29,8 +29,8 @@ const footerLinks = {
       href: "/become-donor",
     },
     {
-      label: "Request Blood",
-      href: "/blood-request",
+      label: "Blood Requests",
+      href: "/blood-requests",
     },
   ],
 

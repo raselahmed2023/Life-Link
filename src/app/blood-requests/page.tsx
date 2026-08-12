@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -10,7 +8,13 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
+import BloodRequestModal from "@/components/blood/BloodRequestModal";
 import HeartLoader from "@/components/ui/HeartLoader";
 import { apiRequest } from "@/lib/api";
 import { bloodGroupToLabel } from "@/lib/bloodGroup";
@@ -26,11 +30,13 @@ type BloodRequest = {
   requiredDate: string;
   phone: string;
   message: string | null;
+
   status:
     | "PENDING"
     | "APPROVED"
     | "REJECTED"
     | "COMPLETED";
+
   createdAt: string;
   updatedAt: string;
 };
@@ -45,14 +51,21 @@ export default function BloodRequestsPage() {
   const [requests, setRequests] =
     useState<BloodRequest[]>([]);
 
+  const [
+    isRequestModalOpen,
+    setIsRequestModalOpen,
+  ] = useState(false);
+
   const [isLoading, setIsLoading] =
     useState(true);
 
   const [error, setError] =
     useState("");
 
-  useEffect(() => {
-    const fetchRequests = async () => {
+  const fetchRequests =
+    useCallback(async () => {
+      setError("");
+
       try {
         const response =
           await apiRequest<BloodRequestResponse>(
@@ -69,116 +82,178 @@ export default function BloodRequestsPage() {
       } finally {
         setIsLoading(false);
       }
-    };
+    }, []);
 
+  useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
+
+  const openRequestModal = () => {
+    const token =
+      localStorage.getItem(
+        "lifelink_token"
+      );
+
+    if (!token) {
+      window.location.href =
+        "/login";
+
+      return;
+    }
+
+    setIsRequestModalOpen(true);
+  };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC]">
-      {/* Hero */}
-      <section className="border-b border-red-100 bg-gradient-to-br from-[#FFF7F6] via-white to-[#F8FAFC]">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-bold text-[#910102]">
-              <Droplets size={17} />
-              Emergency Blood Requests
-            </span>
-
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-[#102A43] sm:text-5xl">
-              People are waiting for help
-            </h1>
-
-            <p className="mt-4 max-w-2xl text-lg leading-8 text-[#64748B]">
-              Browse approved blood requests
-              and help connect patients with
-              suitable donors.
-            </p>
-
-            <Link
-              href="/blood-request"
-              className="mt-7 inline-flex items-center justify-center rounded-xl bg-[#A90000] px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#910102] hover:shadow-lg"
-            >
-              Request Blood
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
-              Active Requests
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
-              Approved blood requests
-            </h2>
-          </div>
-
-          {!isLoading && (
-            <p className="text-sm font-semibold text-[#64748B]">
-              {requests.length} request
-              {requests.length !== 1
-                ? "s"
-                : ""}
-            </p>
-          )}
-        </div>
-
-        {isLoading && (
-          <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-red-100 bg-white text-[#910102]">
-            <HeartLoader
-              text="Finding blood requests..."
-              size={32}
-            />
-          </div>
-        )}
-
-        {!isLoading && error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center font-semibold text-red-700">
-            {error}
-          </div>
-        )}
-
-        {!isLoading &&
-          !error &&
-          requests.length === 0 && (
-            <div className="rounded-3xl border border-dashed border-[#D7DEE7] bg-white px-6 py-16 text-center">
-              <Droplets
-                size={46}
-                className="mx-auto text-[#910102]"
-              />
-
-              <h3 className="mt-5 text-xl font-bold text-[#102A43]">
-                No approved requests
-                right now
-              </h3>
-
-              <p className="mt-2 text-[#64748B]">
-                Approved emergency
-                requests will appear here.
-              </p>
-            </div>
-          )}
-
-        {!isLoading &&
-          !error &&
-          requests.length > 0 && (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {requests.map(
-                (request) => (
-                  <RequestCard
-                    key={request.id}
-                    request={request}
+    <>
+      <main className="min-h-screen bg-[#F8FAFC]">
+        {/* Hero */}
+        <section className="border-b border-red-100 bg-gradient-to-br from-[#FFF7F6] via-white to-[#F8FAFC]">
+          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+            <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-bold text-[#910102]">
+                  <Droplets
+                    size={17}
                   />
-                )
-              )}
+                  Emergency Blood
+                  Requests
+                </span>
+
+                <h1 className="mt-5 text-4xl font-black tracking-tight text-[#102A43] sm:text-5xl">
+                  People are waiting
+                  for help
+                </h1>
+
+                <p className="mt-4 max-w-2xl text-lg leading-8 text-[#64748B]">
+                  Browse approved
+                  requests and help
+                  connect patients with
+                  suitable donors.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  openRequestModal
+                }
+                className="inline-flex self-start rounded-xl bg-[#A90000] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#910102] hover:shadow-lg lg:self-auto"
+              >
+                Request Blood
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Requests */}
+        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
+                Active Requests
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
+                Approved blood
+                requests
+              </h2>
+            </div>
+
+            {!isLoading && (
+              <p className="text-sm font-semibold text-[#64748B]">
+                {requests.length}{" "}
+                {requests.length ===
+                1
+                  ? "request"
+                  : "requests"}
+              </p>
+            )}
+          </div>
+
+          {isLoading && (
+            <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-red-100 bg-white text-[#910102]">
+              <HeartLoader
+                text="Finding blood requests..."
+                size={32}
+              />
             </div>
           )}
-      </section>
-    </main>
+
+          {!isLoading &&
+            error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center font-semibold text-red-700">
+                {error}
+              </div>
+            )}
+
+          {!isLoading &&
+            !error &&
+            requests.length === 0 && (
+              <div className="rounded-3xl border border-dashed border-[#D7DEE7] bg-white px-6 py-16 text-center">
+                <Droplets
+                  size={46}
+                  className="mx-auto text-[#910102]"
+                />
+
+                <h3 className="mt-5 text-xl font-bold text-[#102A43]">
+                  No approved requests
+                  right now
+                </h3>
+
+                <p className="mt-2 text-[#64748B]">
+                  Approved emergency
+                  requests will appear
+                  here.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={
+                    openRequestModal
+                  }
+                  className="mt-6 rounded-xl bg-[#910102] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#B42318]"
+                >
+                  Request Blood
+                </button>
+              </div>
+            )}
+
+          {!isLoading &&
+            !error &&
+            requests.length > 0 && (
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {requests.map(
+                  (request) => (
+                    <RequestCard
+                      key={
+                        request.id
+                      }
+                      request={
+                        request
+                      }
+                    />
+                  )
+                )}
+              </div>
+            )}
+        </section>
+      </main>
+
+      <BloodRequestModal
+        isOpen={
+          isRequestModalOpen
+        }
+        onClose={() =>
+          setIsRequestModalOpen(
+            false
+          )
+        }
+        onSuccess={
+          fetchRequests
+        }
+      />
+    </>
   );
 }
 
@@ -212,7 +287,9 @@ function RequestCard({
             </span>
 
             <h3 className="mt-4 text-xl font-bold text-[#102A43]">
-              {request.patientName}
+              {
+                request.patientName
+              }
             </h3>
           </div>
 
@@ -230,16 +307,24 @@ function RequestCard({
         <div className="space-y-4">
           <InfoRow
             icon={
-              <Hospital size={18} />
+              <Hospital
+                size={18}
+              />
             }
             label="Hospital"
-            value={request.hospital}
+            value={
+              request.hospital
+            }
           />
 
           <InfoRow
-            icon={<MapPin size={18} />}
+            icon={
+              <MapPin size={18} />
+            }
             label="District"
-            value={request.district}
+            value={
+              request.district
+            }
           />
 
           <InfoRow
@@ -253,7 +338,9 @@ function RequestCard({
           />
 
           <InfoRow
-            icon={<Phone size={18} />}
+            icon={
+              <Phone size={18} />
+            }
             label="Contact"
             value={request.phone}
           />
@@ -262,7 +349,7 @@ function RequestCard({
         {request.message && (
           <div className="mt-5 rounded-xl bg-[#F8FAFC] p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-[#64748B]">
-              Additional information
+              Additional Information
             </p>
 
             <p className="mt-2 text-sm leading-6 text-[#49607C]">
@@ -271,7 +358,7 @@ function RequestCard({
           </div>
         )}
 
-        <div className="mt-6 border-t border-slate-100 pt-4">
+        <div className="mt-auto pt-6">
           <span className="inline-flex rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">
             Approved Request
           </span>

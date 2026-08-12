@@ -1,5 +1,110 @@
 @import "tailwindcss";
 
+/*
+  Tailwind CSS v4:
+  dark:* utilities will respond
+  to the .dark class placed on <html>.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+
+  --background: #f8fafc;
+  --foreground: #102a43;
+
+  --surface: #ffffff;
+  --surface-soft: #f3f5f7;
+
+  --border: #e7e9ee;
+
+  --muted: #64748b;
+
+  --brand: #910102;
+  --brand-hover: #b42318;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --background: #090d14;
+  --foreground: #f1f5f9;
+
+  --surface: #101722;
+  --surface-soft: #17202d;
+
+  --border: #263244;
+
+  --muted: #94a3b8;
+
+  --brand: #d82d2d;
+  --brand-hover: #ef4444;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Better text selection */
+::selection {
+  background: rgba(
+    145,
+    1,
+    2,
+    0.2
+  );
+  color: inherit;
+}
+
+html.dark ::selection {
+  background: rgba(
+    239,
+    68,
+    68,
+    0.3
+  );
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: padding-box;
+}
+
+html.dark
+  ::-webkit-scrollbar-thumb {
+  background: #334155;
+  background-clip: padding-box;
+}
+
+html.dark
+  ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+  background-clip: padding-box;
+}
+
+/* Heart loader */
 @keyframes heartbeat {
   0%,
   100% {
@@ -24,5 +129,65 @@
 }
 
 .animate-heartbeat {
-  animation: heartbeat 1.15s ease-in-out infinite;
+  animation: heartbeat
+    1.15s ease-in-out infinite;
+}
+
+/* Small entrance animation */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up
+    0.55s ease-out both;
+}
+
+/* Modal entrance */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96)
+      translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1)
+      translateY(0);
+  }
+}
+
+.animate-modal-in {
+  animation: modal-in
+    0.22s ease-out both;
+}
+
+/* Respect reduced motion */
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+
+    transition-duration:
+      0.01ms !important;
+  }
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { HeartPulse } from "lucide-react";
+import {
+  HeartPulse,
+} from "lucide-react";
 
 type LogoProps = {
   href?: string;
@@ -20,7 +22,7 @@ export default function Logo({
       className="group inline-flex items-center gap-2.5"
     >
       <span className="relative flex h-11 w-11 items-center justify-center">
-        <span className="absolute inset-0 rotate-45 rounded-[14px] bg-gradient-to-br from-[#B42318] to-[#7A0000] shadow-sm transition duration-300 group-hover:rotate-[50deg] group-hover:scale-105" />
+        <span className="absolute inset-0 rotate-45 rounded-[14px] bg-gradient-to-br from-[#B42318] to-[#7A0000] shadow-sm transition duration-300 group-hover:rotate-[50deg] group-hover:scale-105 dark:from-red-600 dark:to-red-900" />
 
         <HeartPulse
           size={23}
@@ -31,11 +33,11 @@ export default function Logo({
 
       {!compact && (
         <span className="flex items-baseline">
-          <span className="text-[25px] font-extrabold tracking-[-0.04em] text-[#102A43]">
+          <span className="text-[25px] font-extrabold tracking-[-0.04em] text-[#102A43] transition-colors dark:text-slate-100">
             Life
           </span>
 
-          <span className="text-[25px] font-extrabold tracking-[-0.04em] text-[#A90000]">
+          <span className="text-[25px] font-extrabold tracking-[-0.04em] text-[#A90000] transition-colors dark:text-red-500">
             Link
           </span>
         </span>
