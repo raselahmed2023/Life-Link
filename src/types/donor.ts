@@ -1,25 +1,29 @@
-export type DonorStatus =
-  | "available"
-  | "recent"
-  | "pending";
+export type ApiBloodGroup =
+  | "A_POSITIVE"
+  | "A_NEGATIVE"
+  | "B_POSITIVE"
+  | "B_NEGATIVE"
+  | "AB_POSITIVE"
+  | "AB_NEGATIVE"
+  | "O_POSITIVE"
+  | "O_NEGATIVE";
 
-export type Donor = {
+export type ApiDonor = {
   id: string;
-  name: string;
-  image: string;
-  bloodGroup: string;
-  area: string;
+  userId: string;
+  bloodGroup: ApiBloodGroup;
   district: string;
-  status: DonorStatus;
-  verified: boolean;
-  confirmedText: string;
-  confirmedRank: number;
-  donations: number;
-  lastDonation: string;
-  joinedRank: number;
+  area: string | null;
+  lastDonation: string | null;
+  isAvailable: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 
-  preferredContact?: string;
-  availabilityTime?: string;
-  weight?: string;
-  healthStatus?: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+  };
 };

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import {
   Activity,
   CalendarDays,
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+
 import {
   useEffect,
   useMemo,
@@ -22,8 +24,11 @@ import {
 
 import BloodRequestModal from "@/components/blood/BloodRequestModal";
 import ContactRequestsSection from "@/components/dashboard/ContactRequestsSection";
+import DonorAvailabilityToggle from "@/components/dashboard/DonorAvailabilityToggle";
+import EditDonorProfileModal from "@/components/dashboard/EditDonorProfileModal";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import HeartLoader from "@/components/ui/HeartLoader";
+
 import { apiRequest } from "@/lib/api";
 import { bloodGroupToLabel } from "@/lib/bloodGroup";
 
@@ -88,17 +93,21 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [user, setUser] =
-    useState<StoredUser | null>(null);
-
-  const [profile, setProfile] =
-    useState<UserResponse["data"] | null>(
+    useState<StoredUser | null>(
       null
     );
+
+  const [profile, setProfile] =
+    useState<
+      UserResponse["data"] | null
+    >(null);
 
   const [
     bloodRequests,
     setBloodRequests,
-  ] = useState<BloodRequest[]>([]);
+  ] = useState<
+    BloodRequest[]
+  >([]);
 
   const [
     isBloodRequestModalOpen,
@@ -108,6 +117,11 @@ export default function DashboardPage() {
   const [
     isEditProfileOpen,
     setIsEditProfileOpen,
+  ] = useState(false);
+
+  const [
+    isEditDonorProfileOpen,
+    setIsEditDonorProfileOpen,
   ] = useState(false);
 
   const [isLoading, setIsLoading] =
@@ -194,7 +208,9 @@ export default function DashboardPage() {
             return;
           }
 
-          setUser(parsedUser);
+          setUser(
+            parsedUser
+          );
 
           await loadDashboardData(
             token,
@@ -244,9 +260,30 @@ export default function DashboardPage() {
           user
         );
       } catch {
-        // Request is already submitted.
+        // submission already done
       }
     };
+
+  const handleDonorUpdated = (
+    updatedDonor: ApiDonor
+  ) => {
+    setProfile(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+
+          donorProfile: {
+            ...current.donorProfile,
+            ...updatedDonor,
+          } as ApiDonor,
+        };
+      }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -286,7 +323,7 @@ export default function DashboardPage() {
     <>
       <main className="min-h-screen bg-[#F8FAFC] py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
+          {/* HEADER */}
           <section className="mb-8 rounded-3xl bg-gradient-to-r from-[#910102] to-[#660000] p-7 text-white shadow-lg sm:p-9">
             <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
               <div className="flex items-center gap-5">
@@ -302,7 +339,9 @@ export default function DashboardPage() {
                   </p>
 
                   <h1 className="mt-1 text-3xl font-bold">
-                    {profile.name}
+                    {
+                      profile.name
+                    }
                   </h1>
 
                   <p className="mt-2 flex items-center gap-2 text-sm text-white/80">
@@ -310,7 +349,9 @@ export default function DashboardPage() {
                       size={16}
                     />
 
-                    {profile.role}{" "}
+                    {
+                      profile.role
+                    }{" "}
                     Account
                   </p>
                 </div>
@@ -341,14 +382,18 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Stats */}
+          {/* STATS */}
           <section className="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               icon={
-                <UserRound size={23} />
+                <UserRound
+                  size={23}
+                />
               }
               label="Account Status"
-              value={profile.status}
+              value={
+                profile.status
+              }
             />
 
             <StatCard
@@ -360,14 +405,18 @@ export default function DashboardPage() {
               label="Donor Status"
               value={
                 donorProfile
-                  ? "Registered"
+                  ? donorProfile.isAvailable
+                    ? "Available"
+                    : "Unavailable"
                   : "Not Registered"
               }
             />
 
             <StatCard
               icon={
-                <Droplets size={23} />
+                <Droplets
+                  size={23}
+                />
               }
               label="Blood Requests"
               value={String(
@@ -377,17 +426,21 @@ export default function DashboardPage() {
 
             <StatCard
               icon={
-                <Activity size={23} />
+                <Activity
+                  size={23}
+                />
               }
               label="Role"
-              value={profile.role}
+              value={
+                profile.role
+              }
             />
           </section>
 
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            {/* Left Side */}
+            {/* LEFT */}
             <div className="space-y-8">
-              {/* My Profile */}
+              {/* USER PROFILE */}
               <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm">
                 <div className="mb-6 flex items-start justify-between gap-4">
                   <div>
@@ -409,7 +462,9 @@ export default function DashboardPage() {
                     }
                     className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2 text-sm font-bold text-[#910102] transition hover:bg-red-100"
                   >
-                    <Pencil size={16} />
+                    <Pencil
+                      size={16}
+                    />
                     Edit
                   </button>
                 </div>
@@ -422,20 +477,28 @@ export default function DashboardPage() {
                       />
                     }
                     label="Full Name"
-                    value={profile.name}
+                    value={
+                      profile.name
+                    }
                   />
 
                   <ProfileRow
                     icon={
-                      <Mail size={19} />
+                      <Mail
+                        size={19}
+                      />
                     }
                     label="Email"
-                    value={profile.email}
+                    value={
+                      profile.email
+                    }
                   />
 
                   <ProfileRow
                     icon={
-                      <Phone size={19} />
+                      <Phone
+                        size={19}
+                      />
                     }
                     label="Phone"
                     value={
@@ -451,20 +514,43 @@ export default function DashboardPage() {
                       />
                     }
                     label="Account Status"
-                    value={profile.status}
+                    value={
+                      profile.status
+                    }
                   />
                 </div>
               </section>
 
-              {/* Donor Profile */}
+              {/* DONOR PROFILE */}
               <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
-                  Donation
-                </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
+                      Donation
+                    </p>
 
-                <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
-                  My Donor Profile
-                </h2>
+                    <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
+                      My Donor Profile
+                    </h2>
+                  </div>
+
+                  {donorProfile && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIsEditDonorProfileOpen(
+                          true
+                        )
+                      }
+                      className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2 text-sm font-bold text-[#910102] transition hover:bg-red-100"
+                    >
+                      <Pencil
+                        size={16}
+                      />
+                      Edit
+                    </button>
+                  )}
+                </div>
 
                 {!donorProfile ? (
                   <div className="mt-6 rounded-2xl bg-red-50 p-6">
@@ -505,7 +591,8 @@ export default function DashboardPage() {
                         <p className="mt-1 text-3xl font-black text-[#910102]">
                           {
                             bloodGroupToLabel[
-                              donorProfile.bloodGroup
+                              donorProfile
+                                .bloodGroup
                             ]
                           }
                         </p>
@@ -528,7 +615,9 @@ export default function DashboardPage() {
                         donorProfile.area
                           ? `${donorProfile.area}, `
                           : ""
-                      }${donorProfile.district}`}
+                      }${
+                        donorProfile.district
+                      }`}
                     />
 
                     <ProfileRow
@@ -547,23 +636,20 @@ export default function DashboardPage() {
                       }
                     />
 
-                    <div className="flex items-center justify-between rounded-xl border border-green-100 bg-green-50 px-4 py-3">
-                      <span className="text-sm font-semibold text-green-800">
-                        Availability
-                      </span>
-
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
-                        {donorProfile.isAvailable
-                          ? "Available"
-                          : "Unavailable"}
-                      </span>
-                    </div>
+                    <DonorAvailabilityToggle
+                      donor={
+                        donorProfile
+                      }
+                      onUpdated={
+                        handleDonorUpdated
+                      }
+                    />
                   </div>
                 )}
               </section>
             </div>
 
-            {/* My Blood Requests */}
+            {/* BLOOD REQUESTS */}
             <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm sm:p-7">
               <div className="mb-6 flex items-center justify-between gap-4">
                 <div>
@@ -598,7 +684,8 @@ export default function DashboardPage() {
                   />
 
                   <h3 className="mt-4 font-bold text-[#102A43]">
-                    No blood requests yet
+                    No blood requests
+                    yet
                   </h3>
 
                   <p className="mt-2 text-sm text-[#64748B]">
@@ -624,8 +711,12 @@ export default function DashboardPage() {
                   {bloodRequests.map(
                     (request) => (
                       <BloodRequestCard
-                        key={request.id}
-                        request={request}
+                        key={
+                          request.id
+                        }
+                        request={
+                          request
+                        }
                       />
                     )
                   )}
@@ -634,14 +725,14 @@ export default function DashboardPage() {
             </section>
           </div>
 
-          {/* Contact Requests */}
+          {/* CONTACT REQUESTS */}
           <div className="mt-8">
             <ContactRequestsSection />
           </div>
         </div>
       </main>
 
-      {/* Blood Request Modal */}
+      {/* BLOOD MODAL */}
       <BloodRequestModal
         isOpen={
           isBloodRequestModalOpen
@@ -656,7 +747,7 @@ export default function DashboardPage() {
         }
       />
 
-      {/* Edit Profile Modal */}
+      {/* PROFILE MODAL */}
       <EditProfileModal
         isOpen={
           isEditProfileOpen
@@ -694,6 +785,26 @@ export default function DashboardPage() {
           );
         }}
       />
+
+      {/* DONOR EDIT MODAL */}
+      {donorProfile && (
+        <EditDonorProfileModal
+          isOpen={
+            isEditDonorProfileOpen
+          }
+          donor={
+            donorProfile
+          }
+          onClose={() =>
+            setIsEditDonorProfileOpen(
+              false
+            )
+          }
+          onUpdated={
+            handleDonorUpdated
+          }
+        />
+      )}
     </>
   );
 }
@@ -763,7 +874,9 @@ function BloodRequestCard({
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="text-lg font-bold text-[#102A43]">
-              {request.patientName}
+              {
+                request.patientName
+              }
             </h3>
 
             <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-[#910102]">
@@ -780,13 +893,18 @@ function BloodRequestCard({
           </p>
 
           <p className="mt-1 flex items-center gap-1.5 text-sm text-[#64748B]">
-            <MapPin size={15} />
+            <MapPin
+              size={15}
+            />
+
             {request.district}
           </p>
         </div>
 
         <RequestStatus
-          status={request.status}
+          status={
+            request.status
+          }
         />
       </div>
 
@@ -844,7 +962,9 @@ function getInitials(
   return name
     .split(" ")
     .filter(Boolean)
-    .map((part) => part[0])
+    .map(
+      (part) => part[0]
+    )
     .join("")
     .slice(0, 2)
     .toUpperCase();
