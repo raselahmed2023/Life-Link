@@ -1,104 +1,112 @@
-import { Star } from "lucide-react";
+"use client";
 
-type Testimonial = {
-  id: number;
-  name: string;
-  role: string;
-  initials: string;
-  message: string;
-};
+import { motion } from "framer-motion";
+import {
+  EyeOff,
+  HeartHandshake,
+  MapPin,
+} from "lucide-react";
 
-const testimonials: Testimonial[] = [
+import Reveal from "@/components/ui/Reveal";
+
+const benefits = [
   {
-    id: 1,
-    name: "Anisur Rahman",
-    role: "Family Member, Dhaka",
-    initials: "AR",
-    message:
-      "I was in desperate need of AB- blood for my mother's surgery. Within 15 minutes of posting a request on LifeLink, three confirmed donors responded. The process was seamless and literally life-saving.",
+    icon: MapPin,
+    title:
+      "Location-Based Search",
+    description:
+      "Find donors using blood group and location information to narrow down relevant matches.",
   },
   {
-    id: 2,
-    name: "Laila Ahmed",
-    role: "Registered Donor, Sylhet",
-    initials: "LA",
-    message:
-      "As a regular donor, I love that LifeLink respects my privacy. I only get contact requests when I have confirmed that I am available.",
+    icon: EyeOff,
+    title:
+      "Contact Privacy",
+    description:
+      "Phone numbers and email addresses are not exposed in the public donor directory.",
   },
   {
-    id: 3,
-    name: "Dr. K. Mahbub",
-    role: "Medical Professional, Chattogram",
-    initials: "KM",
-    message:
-      "The availability confirmation feature is a game changer. Instead of calling outdated numbers, people can focus on recently confirmed donors.",
+    icon: HeartHandshake,
+    title:
+      "Approval-Based Connection",
+    description:
+      "Donors decide whether to accept or reject contact requests before their contact details are shared.",
   },
 ];
 
 export default function SuccessStoriesSection() {
   return (
-    <section className="bg-[#F7F9FB] px-4 py-20 sm:px-6 lg:px-8">
+    <section className="bg-[#F8FAFC] px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        {/* Section heading */}
-        <div className="mx-auto mb-12 max-w-2xl text-center">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#910102]">
-            Community Impact
-          </p>
+        <Reveal>
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#910102]">
+              Why LifeLink
+            </p>
 
-          <h2 className="text-3xl font-bold tracking-tight text-[#102A43] sm:text-4xl">
-            Success Stories
-          </h2>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[#102A43] sm:text-4xl">
+              Simpler and safer donor connections
+            </h2>
 
-          <p className="mt-4 leading-7 text-[#49607C]">
-            Real experiences from donors, families and healthcare
-            professionals.
-          </p>
-        </div>
+            <p className="mt-4 leading-7 text-slate-600">
+              LifeLink focuses on
+              donor discovery, privacy
+              and controlled
+              communication.
+            </p>
+          </div>
+        </Reveal>
 
-        {/* Testimonial cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <article
-              key={testimonial.id}
-              className="flex h-full flex-col rounded-2xl border border-[#E3BEB8] bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-            >
-              {/* Rating */}
-              <div
-                className="mb-6 flex items-center gap-1 text-[#910102]"
-                aria-label="5 out of 5 stars"
-              >
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <Star
-                    key={index}
-                    size={18}
-                    fill="currentColor"
-                  />
-                ))}
-              </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {benefits.map(
+            (benefit, index) => {
+              const Icon =
+                benefit.icon;
 
-              {/* Testimonial */}
-              <blockquote className="flex-1 italic leading-7 text-[#49607C]">
-                &ldquo;{testimonial.message}&rdquo;
-              </blockquote>
+              return (
+                <Reveal
+                  key={
+                    benefit.title
+                  }
+                  delay={
+                    index *
+                    0.1
+                  }
+                >
+                  <motion.article
+                    whileHover={{
+                      y: -8,
+                      scale: 1.01,
+                    }}
+                    className="group h-full rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:border-red-200 hover:shadow-lg"
+                  >
+                    <motion.div
+                      whileHover={{
+                        rotate: -6,
+                        scale: 1.1,
+                      }}
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-[#910102] transition group-hover:bg-[#910102] group-hover:text-white"
+                    >
+                      <Icon
+                        size={23}
+                      />
+                    </motion.div>
 
-              {/* User information */}
-              <div className="mt-8 flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#910102]/10 font-bold text-[#910102]">
-                  {testimonial.initials}
-                </div>
+                    <h3 className="mt-6 text-xl font-black text-[#102A43]">
+                      {
+                        benefit.title
+                      }
+                    </h3>
 
-                <div>
-                  <p className="font-bold text-[#191C1E]">
-                    {testimonial.name}
-                  </p>
-
-                  <p className="mt-1 text-xs text-[#49607C]">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-            </article>
-          ))}
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {
+                        benefit.description
+                      }
+                    </p>
+                  </motion.article>
+                </Reveal>
+              );
+            }
+          )}
         </div>
       </div>
     </section>

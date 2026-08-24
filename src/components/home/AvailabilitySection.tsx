@@ -1,101 +1,160 @@
-import { CheckCircle2 } from "lucide-react";
+"use client";
+
+import { motion } from "framer-motion";
+import {
+  CheckCircle2,
+  Clock3,
+  ToggleRight,
+} from "lucide-react";
+
+import Reveal from "@/components/ui/Reveal";
 
 const benefits = [
-  "Save critical time by contacting active donors first.",
-  "Reduce donor fatigue from outdated request calls.",
-  "Ensure your request reaches someone ready to act.",
+  "Focus on donors who are currently marked as available.",
+  "Donors can update availability directly from their dashboard.",
+  "Unavailable donors can avoid unnecessary contact requests.",
 ];
 
 export default function AvailabilitySection() {
   return (
-    <section className="px-4 py-20 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
-        {/* Donor status comparison */}
-        <div className="order-2 lg:order-1">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {/* Recently confirmed donor */}
-            <article className="relative overflow-hidden rounded-2xl border-2 border-[#15803D] bg-white p-6 shadow-lg">
-              <span className="absolute right-0 top-0 rounded-bl-lg bg-[#15803D] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                Optimal
-              </span>
+    <section className="bg-white px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <Reveal>
+          <div className="rounded-[32px] border border-slate-200 bg-[#F8FAFC] p-5 sm:p-8">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <motion.article
+                whileHover={{
+                  y: -6,
+                }}
+                className="relative overflow-hidden rounded-3xl border-2 border-green-500 bg-white p-6 shadow-md"
+              >
+                <motion.span
+                  animate={{
+                    scale: [
+                      1,
+                      1.5,
+                      1,
+                    ],
+                  }}
+                  transition={{
+                    duration: 1.8,
+                    repeat: Infinity,
+                  }}
+                  className="absolute right-4 top-4 h-2.5 w-2.5 rounded-full bg-green-500"
+                />
 
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#910102]/10 text-sm font-bold text-[#910102]">
-                  AB+
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-sm font-black text-[#910102]">
+                  O+
                 </div>
 
-                <span className="rounded-full bg-[#15803D]/10 px-3 py-1 text-xs font-bold text-[#15803D]">
+                <p className="mt-6 text-xs font-bold uppercase tracking-wider text-green-700">
+                  Donor Status
+                </p>
+
+                <h3 className="mt-2 text-xl font-black text-[#102A43]">
                   Available
-                </span>
-              </div>
+                </h3>
 
-              <p className="mb-2 text-sm font-bold text-[#15803D]">
-                Confirmed Today
-              </p>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  This donor is currently open to
+                  receiving contact requests.
+                </p>
 
-              <p className="text-xs leading-5 text-[#49607C]">
-                Highest probability of immediate response and donation
-                readiness.
-              </p>
-            </article>
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">
+                  <ToggleRight
+                    size={16}
+                  />
+                  Availability On
+                </div>
+              </motion.article>
 
-            {/* Old confirmation donor */}
-            <article className="rounded-2xl border border-[#E3BEB8] bg-white p-6 opacity-60 shadow-sm">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#910102]/10 text-sm font-bold text-[#910102]">
+              <motion.article
+                whileHover={{
+                  y: -4,
+                }}
+                className="rounded-3xl border border-slate-200 bg-white p-6 opacity-70"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-sm font-black text-slate-500">
                   B-
                 </div>
 
-                <span className="rounded-full bg-[#E6E8EA] px-3 py-1 text-xs font-bold text-[#49607C]">
-                  Unconfirmed
-                </span>
-              </div>
+                <p className="mt-6 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Donor Status
+                </p>
 
-              <p className="mb-2 text-sm font-bold text-[#49607C]">
-                Last confirmed 45 days ago
-              </p>
+                <h3 className="mt-2 text-xl font-black text-[#102A43]">
+                  Unavailable
+                </h3>
 
-              <p className="text-xs leading-5 text-[#49607C]">
-                Availability may have changed. Please verify before counting
-                on this donor.
-              </p>
-            </article>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  This donor has temporarily turned
+                  off their availability.
+                </p>
+
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+                  <Clock3
+                    size={15}
+                  />
+                  Not available
+                </div>
+              </motion.article>
+            </div>
           </div>
-        </div>
+        </Reveal>
 
-        {/* Text content */}
-        <div className="order-1 lg:order-2">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#910102]">
-            Updated Availability
-          </p>
+        <Reveal delay={0.12}>
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#910102]">
+              Donor Availability
+            </p>
 
-          <h2 className="text-3xl font-bold leading-tight tracking-tight text-[#102A43] sm:text-4xl">
-            Availability changes, so confirmation matters
-          </h2>
+            <h2 className="mt-3 text-3xl font-black leading-tight tracking-tight text-[#102A43] sm:text-4xl">
+              Find donors who are ready to help
+            </h2>
 
-          <p className="mt-6 text-lg leading-8 text-[#49607C]">
-            Most platforms show thousands of donors, but many have not updated
-            their status in months. LifeLink prioritizes donors who actively
-            confirm their availability every few weeks.
-          </p>
+            <p className="mt-5 text-base leading-7 text-slate-600 sm:text-lg">
+              LifeLink allows donors to control their
+              availability so users can focus on donors
+              who are more likely to respond.
+            </p>
 
-          <ul className="mt-8 space-y-4">
-            {benefits.map((benefit) => (
-              <li
-                key={benefit}
-                className="flex items-start gap-3 text-[#191C1E]"
-              >
-                <CheckCircle2
-                  size={22}
-                  className="mt-0.5 shrink-0 text-[#15803D]"
-                  fill="currentColor"
-                />
+            <ul className="mt-8 space-y-4">
+              {benefits.map(
+                (benefit, index) => (
+                  <motion.li
+                    key={benefit}
+                    initial={{
+                      opacity: 0,
+                      x: 18,
+                    }}
+                    whileInView={{
+                      opacity: 1,
+                      x: 0,
+                    }}
+                    viewport={{
+                      once: true,
+                    }}
+                    transition={{
+                      delay:
+                        index *
+                        0.08,
+                    }}
+                    className="flex items-start gap-3"
+                  >
+                    <CheckCircle2
+                      size={21}
+                      className="mt-0.5 shrink-0 text-green-600"
+                    />
 
-                <span className="leading-7">{benefit}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                    <span className="leading-7 text-[#102A43]">
+                      {benefit}
+                    </span>
+                  </motion.li>
+                )
+              )}
+            </ul>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

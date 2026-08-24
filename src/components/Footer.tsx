@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Facebook,
+  Globe2,
   Mail,
 } from "lucide-react";
 
@@ -52,7 +52,8 @@ export default function Footer() {
     new Date().getFullYear();
 
   return (
-    <footer className="border-t border-slate-200 bg-white">
+    <footer className="bg-white">
+      {/* Main Footer Content */}
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -60,23 +61,20 @@ export default function Footer() {
             <Logo />
 
             <p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">
-              LifeLink helps connect
-              blood donors with people
-              who need blood, making
-              donor discovery and
-              communication simpler.
+              LifeLink helps connect blood donors
+              with people who need blood, making
+              donor discovery and communication
+              simpler.
             </p>
 
             <div className="mt-5 flex items-center gap-3">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="LifeLink Facebook"
+              <Link
+                href="/"
+                aria-label="LifeLink website"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-[#910102]"
               >
-                <Facebook size={18} />
-              </a>
+                <Globe2 size={18} />
+              </Link>
 
               <a
                 href="mailto:support@lifelink.com"
@@ -88,34 +86,32 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Platform */}
           <FooterColumn
             title="Platform"
             links={platformLinks}
           />
 
-          {/* Resources */}
           <FooterColumn
             title="Resources"
             links={resourceLinks}
           />
 
-          {/* Legal */}
           <FooterColumn
             title="Legal"
             links={legalLinks}
           />
         </div>
+      </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+      {/* FULL WIDTH HORIZONTAL LINE */}
+      <div className="w-full border-t border-slate-200">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>
-            © {year} LifeLink.
-            All rights reserved.
+            © {year} LifeLink. All rights reserved.
           </p>
 
           <p>
-            Connecting people.
-            Saving lives.
+            Connecting people. Saving lives.
           </p>
         </div>
       </div>
