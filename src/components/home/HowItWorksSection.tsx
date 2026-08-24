@@ -1,89 +1,85 @@
 import {
-  MessageCircle,
+  CheckCircle2,
+  HeartHandshake,
   Search,
-  ShieldCheck,
+  Send,
 } from "lucide-react";
 
-type Step = {
-  id: number;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{
-    size?: number;
-    className?: string;
-  }>;
-};
-
-const steps: Step[] = [
+const steps = [
   {
-    id: 1,
-    title: "Search Donors",
-    description:
-      "Enter the required blood group and location to see registered donors in that area.",
+    number: "01",
     icon: Search,
+    title: "Find a Donor",
+    description:
+      "Search donors by blood group and location to find the most relevant matches.",
   },
   {
-    id: 2,
-    title: "Review Availability",
+    number: "02",
+    icon: Send,
+    title: "Send Contact Request",
     description:
-      "Check the last confirmed status to find donors who are most likely ready to help.",
-    icon: ShieldCheck,
+      "Send a contact request without exposing private donor information publicly.",
   },
   {
-    id: 3,
-    title: "Request Contact",
+    number: "03",
+    icon: CheckCircle2,
+    title: "Donor Approves",
     description:
-      "Send a contact request. Once approved by the donor, you can receive their contact details.",
-    icon: MessageCircle,
+      "The donor reviews and accepts or rejects the request from their dashboard.",
+  },
+  {
+    number: "04",
+    icon: HeartHandshake,
+    title: "Connect Directly",
+    description:
+      "After approval, contact information becomes available so both sides can connect.",
   },
 ];
 
 export default function HowItWorksSection() {
   return (
-    <section className="bg-[#F7F9FB] px-4 py-20 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        {/* Section heading */}
-        <div className="mx-auto mb-16 max-w-2xl text-center">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#910102]">
-            Simple Process
+    <section
+      id="how-it-works"
+      className="bg-[#F8FAFC] py-20"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#910102]">
+            How It Works
           </p>
 
-          <h2 className="text-3xl font-bold tracking-tight text-[#102A43] sm:text-4xl">
-            How LifeLink works
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-[#102A43] sm:text-4xl">
+            A simple path from search to connection
           </h2>
 
-          <p className="mt-4 leading-7 text-[#49607C]">
-            Find an available blood donor safely through three simple steps.
+          <p className="mt-4 text-slate-600">
+            LifeLink keeps the process simple while protecting donor contact
+            information until approval.
           </p>
         </div>
 
-        {/* Steps */}
-        <div className="relative grid grid-cols-1 gap-12 md:grid-cols-3">
-          {/* Desktop connecting line */}
-          <div className="absolute left-[16.66%] right-[16.66%] top-10 hidden border-t-2 border-dashed border-[#E3BEB8] md:block" />
-
-          {steps.map((step, index) => {
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step) => {
             const Icon = step.icon;
 
             return (
               <article
-                key={step.id}
-                className="relative z-10 flex flex-col items-center text-center"
+                key={step.number}
+                className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-red-200 hover:shadow-lg"
               >
-                {/* Icon circle */}
-                <div className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#E3BEB8] bg-white text-[#910102] shadow-lg">
-                  <Icon size={34} />
+                <span className="absolute right-5 top-5 text-4xl font-black text-red-50">
+                  {step.number}
+                </span>
 
-                  <span className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#910102] text-xs font-bold text-white">
-                    {index + 1}
-                  </span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-[#910102] transition group-hover:bg-[#910102] group-hover:text-white">
+                  <Icon size={23} />
                 </div>
 
-                <h3 className="text-2xl font-bold text-[#102A43]">
+                <h3 className="mt-5 text-lg font-bold text-[#102A43]">
                   {step.title}
                 </h3>
 
-                <p className="mt-4 max-w-sm leading-7 text-[#49607C]">
+                <p className="mt-3 text-sm leading-6 text-slate-600">
                   {step.description}
                 </p>
               </article>

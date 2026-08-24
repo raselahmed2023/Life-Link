@@ -1,145 +1,121 @@
 import Link from "next/link";
 import {
-  HeartHandshake,
+  Facebook,
   Mail,
-  MapPin,
 } from "lucide-react";
-import { FaFacebookF } from "react-icons/fa6";
 
 import Logo from "@/components/Logo";
 
-type FooterLink = {
-  label: string;
-  href: string;
-};
+const platformLinks = [
+  {
+    label: "Find Donors",
+    href: "/donors",
+  },
+  {
+    label: "Become a Donor",
+    href: "/become-donor",
+  },
+  {
+    label: "Blood Requests",
+    href: "/blood-requests",
+  },
+];
 
-type FooterColumnProps = {
-  title: string;
-  links: FooterLink[];
-};
+const resourceLinks = [
+  {
+    label: "How It Works",
+    href: "/#how-it-works",
+  },
+  {
+    label: "Why Donate",
+    href: "/#why-donate",
+  },
+  {
+    label: "FAQ",
+    href: "/#faq",
+  },
+];
 
-const footerLinks = {
-  platform: [
-    {
-      label: "Find Donors",
-      href: "/donors",
-    },
-    {
-      label: "Become a Donor",
-      href: "/become-donor",
-    },
-    {
-      label: "Blood Requests",
-      href: "/blood-requests",
-    },
-  ],
-
-  resources: [
-    {
-      label: "How It Works",
-      href: "/#how-it-works",
-    },
-    {
-      label: "Success Stories",
-      href: "/#success-stories",
-    },
-    {
-      label: "FAQs",
-      href: "/#faq",
-    },
-  ],
-
-  legal: [
-    {
-      label: "Privacy Policy",
-      href: "/",
-    },
-    {
-      label: "Terms of Service",
-      href: "/",
-    },
-  ],
-};
+const legalLinks = [
+  {
+    label: "Privacy Policy",
+    href: "/privacy",
+  },
+  {
+    label: "Terms & Conditions",
+    href: "/terms",
+  },
+];
 
 export default function Footer() {
+  const year =
+    new Date().getFullYear();
+
   return (
-    <footer className="border-t border-[#E9D0CC] bg-[#F8FAFC]">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
-        <div>
-          <Logo />
+    <footer className="border-t border-slate-200 bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Brand */}
+          <div>
+            <Logo />
 
-          <p className="mt-5 max-w-sm text-sm leading-7 text-[#49607C]">
-            Connecting blood donors with people in need
-            across Bangladesh through a safer, faster,
-            and privacy-focused platform.
-          </p>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">
+              LifeLink helps connect
+              blood donors with people
+              who need blood, making
+              donor discovery and
+              communication simpler.
+            </p>
 
-          <div className="mt-5 space-y-3 text-sm text-[#49607C]">
-            <div className="flex items-center gap-2">
-              <MapPin
-                size={17}
-                className="text-[#910102]"
-              />
-              Bangladesh
-            </div>
+            <div className="mt-5 flex items-center gap-3">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="LifeLink Facebook"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-[#910102]"
+              >
+                <Facebook size={18} />
+              </a>
 
-            <div className="flex items-center gap-2">
-              <HeartHandshake
-                size={17}
-                className="text-[#910102]"
-              />
-              Built to connect and save lives
+              <a
+                href="mailto:support@lifelink.com"
+                aria-label="Email LifeLink"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-[#910102]"
+              >
+                <Mail size={18} />
+              </a>
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-3">
-            <a
-              href="https://www.facebook.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Visit LifeLink Facebook page"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#910102] shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-[#910102] hover:text-white"
-            >
-              <FaFacebookF size={17} />
-            </a>
+          {/* Platform */}
+          <FooterColumn
+            title="Platform"
+            links={platformLinks}
+          />
 
-            <a
-              href="mailto:support@lifelink.com"
-              aria-label="Email LifeLink"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#910102] shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-[#910102] hover:text-white"
-            >
-              <Mail size={18} />
-            </a>
-          </div>
+          {/* Resources */}
+          <FooterColumn
+            title="Resources"
+            links={resourceLinks}
+          />
+
+          {/* Legal */}
+          <FooterColumn
+            title="Legal"
+            links={legalLinks}
+          />
         </div>
 
-        <FooterColumn
-          title="Platform"
-          links={footerLinks.platform}
-        />
-
-        <FooterColumn
-          title="Resources"
-          links={footerLinks.resources}
-        />
-
-        <FooterColumn
-          title="Legal"
-          links={footerLinks.legal}
-        />
-      </div>
-
-      <div className="border-t border-[#E9D0CC]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-[#64748B] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} LifeLink.
+            © {year} LifeLink.
             All rights reserved.
           </p>
 
-          <p className="flex items-center gap-1.5">
-            Made with
-            <span className="text-[#A90000]">♥</span>
-            for communities across Bangladesh.
+          <p>
+            Connecting people.
+            Saving lives.
           </p>
         </div>
       </div>
@@ -150,19 +126,25 @@ export default function Footer() {
 function FooterColumn({
   title,
   links,
-}: FooterColumnProps) {
+}: {
+  title: string;
+  links: {
+    label: string;
+    href: string;
+  }[];
+}) {
   return (
     <div>
-      <h3 className="mb-5 font-bold text-[#102A43]">
+      <h3 className="font-bold text-[#102A43]">
         {title}
       </h3>
 
-      <ul className="space-y-3">
+      <ul className="mt-4 space-y-3">
         {links.map((link) => (
-          <li key={link.label}>
+          <li key={link.href}>
             <Link
               href={link.href}
-              className="text-sm text-[#49607C] transition hover:text-[#910102]"
+              className="text-sm text-slate-600 transition hover:text-[#910102]"
             >
               {link.label}
             </Link>

@@ -1,77 +1,127 @@
+import Image from "next/image";
 import Link from "next/link";
-
-const heroImage =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAm2-RU-E-brs91xy39k91_yY1O354YtueQ9avGmDVB3YRaCtgwbscL7w1BhVD-tWqm5eaNR4EF43UQq84N7qwgdMsULB6uvClKsGdVEzj4s_bscv40K3zjCtvNfw-izV5S51HUNOLPc1R04H1ANsv8PiIkrXyi2DpDB3CxZAJpd9bD01EK3pzvc1wpCQ0Y8bVS0c6PdzJCqRTKODlX5Ok92kN0eZNCPcPiDdTD-7RMldcA4PkjYO4";
+import {
+  ArrowRight,
+  HeartHandshake,
+  Search,
+} from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-[#F7F9FB] pb-28 pt-12 md:pb-36 md:pt-20">
-      {/* Decorative background */}
-      <div className="pointer-events-none absolute -left-32 bottom-0 h-72 w-72 rounded-full bg-red-100/50 blur-3xl" />
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#FFF8F7] via-white to-[#F8FAFC]">
+      <div className="absolute -left-20 top-20 h-72 w-72 rounded-full bg-red-100/40 blur-3xl" />
+      <div className="absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-red-200/30 blur-3xl" />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid min-h-[520px] grid-cols-1 items-center gap-12 md:grid-cols-2">
-          {/* Left content */}
-          <div className="relative z-10 text-center md:text-left">
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-red-700">
-              Connecting lives across Bangladesh
-            </p>
+      <div className="relative mx-auto grid min-h-[650px] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-20">
+        <div className="animate-fade-up">
+          <span className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-white px-4 py-2 text-sm font-bold text-[#910102] shadow-sm">
+            <HeartHandshake size={17} />
+            Connecting donors with people in need
+          </span>
 
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-[#102A43] sm:text-5xl lg:text-[56px] lg:leading-[1.1]">
-              The right donor can make every{" "}
-              <span className="text-[#910102]">second count</span>
-            </h1>
+          <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight tracking-tight text-[#102A43] sm:text-5xl lg:text-6xl">
+            Find the right blood donor
+            <span className="text-[#A90000]"> when every moment matters.</span>
+          </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-[#49607C] sm:text-lg md:mx-0">
-              Find recently available blood donors by blood group and location
-              while keeping donor contact information private and secure.
-            </p>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+            LifeLink makes it easier to find available blood donors,
+            request blood, and connect safely through a simple approval-based
+            contact system.
+          </p>
 
-            <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row md:justify-start">
-              <Link
-                href="/donors"
-                className="inline-flex min-h-14 items-center justify-center rounded-[10px] bg-[#B42318] px-8 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#910102] hover:shadow-lg active:scale-[0.98]"
-              >
-                Find a Donor
-              </Link>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/donors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#910102] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#B42318] hover:shadow-lg"
+            >
+              <Search size={18} />
+              Find Donors
+            </Link>
 
-              <Link
-                href="/become-donor"
-                className="inline-flex min-h-14 items-center justify-center rounded-[10px] border-2 border-[#102A43] px-8 py-4 text-sm font-bold text-[#102A43] transition hover:bg-[#102A43] hover:text-white active:scale-[0.98]"
-              >
-                Become a Donor
-              </Link>
-            </div>
+            <Link
+              href="/blood-requests"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-6 py-3.5 text-sm font-bold text-[#910102] transition duration-300 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50"
+            >
+              Blood Requests
+              <ArrowRight size={18} />
+            </Link>
           </div>
 
-          {/* Right image */}
-          <div className="relative hidden md:block">
-            <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-red-700/5 blur-3xl" />
+          <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
+            <MiniStat
+              value="8"
+              label="Blood Groups"
+            />
+            <MiniStat
+              value="24/7"
+              label="Access"
+            />
+            <MiniStat
+              value="Direct"
+              label="Connection"
+            />
+          </div>
+        </div>
 
-            <div className="relative z-10 rounded-[28px] border border-[#E3BEB8] bg-white p-5 shadow-xl">
-              <div className="overflow-hidden rounded-2xl">
-                <img
-                  src={heroImage}
-                  alt="LifeLink community volunteers supporting one another"
-                  className="h-[400px] w-full object-cover transition duration-700 hover:scale-[1.03]"
-                  loading="eager"
+        <div className="relative animate-fade-up">
+          <div className="relative mx-auto max-w-[560px]">
+            <div className="absolute -inset-4 rounded-[36px] bg-gradient-to-br from-red-100 to-red-50 blur-xl" />
+
+            <div className="relative overflow-hidden rounded-[32px] border border-white bg-white p-3 shadow-2xl">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] sm:aspect-[5/4] lg:aspect-[4/5]">
+                <Image
+                  src="/images/lifelink-hero.jpg"
+                  alt="Blood donor helping someone in need"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
                 />
+
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent p-6 pt-20">
+                  <p className="text-sm font-semibold text-white/80">
+                    One connection can save a life
+                  </p>
+
+                  <p className="mt-1 text-xl font-black text-white">
+                    Be available when someone needs you.
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Small floating card */}
-            <div className="absolute -bottom-6 -left-8 z-20 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-lg">
-              <p className="text-sm font-bold text-[#102A43]">
-                Privacy protected
+            <div className="absolute -bottom-5 -left-4 rounded-2xl border border-red-100 bg-white px-4 py-3 shadow-lg sm:left-2">
+              <p className="text-xs font-semibold text-slate-500">
+                Donor Search
               </p>
-
-              <p className="mt-1 text-xs text-[#49607C]">
-                Contact details remain secure
+              <p className="mt-1 font-bold text-[#102A43]">
+                Blood group + location
               </p>
             </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function MiniStat({
+  value,
+  label,
+}: {
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-red-100 bg-white/80 p-4 backdrop-blur">
+      <p className="text-xl font-black text-[#910102]">
+        {value}
+      </p>
+
+      <p className="mt-1 text-xs font-semibold text-slate-500">
+        {label}
+      </p>
+    </div>
   );
 }

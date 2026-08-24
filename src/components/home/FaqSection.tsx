@@ -1,104 +1,108 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronDown,
+  HelpCircle,
+} from "lucide-react";
 import { useState } from "react";
 
-type Faq = {
-  id: number;
-  question: string;
-  answer: string;
-};
-
-const faqs: Faq[] = [
+const faqs = [
   {
-    id: 1,
-    question: "How do I request contact information?",
+    question:
+      "Is donor contact information public?",
     answer:
-      'When you find a donor, click the "Request Contact" button. The donor will receive your request. After approval, you will be able to access their contact information.',
+      "No. Donor phone and email should only become available after the donor approves a contact request.",
   },
   {
-    id: 2,
-    question: "Is my data safe on LifeLink?",
+    question:
+      "Can anyone create a blood request?",
     answer:
-      "Yes. Donor phone numbers are not displayed publicly. Contact information is shared only after the donor approves a valid contact request.",
+      "A registered and logged-in user can submit a blood request. New requests remain pending until an administrator reviews them.",
   },
   {
-    id: 3,
-    question: "How often can I donate blood?",
+    question:
+      "Can donors stop appearing as available?",
     answer:
-      "Donation eligibility and timing depend on your health and medical guidance. Always consult a qualified healthcare professional before donating blood.",
+      "Yes. Donors can switch their availability on or off directly from their dashboard.",
+  },
+  {
+    question:
+      "Who approves contact requests?",
+    answer:
+      "The donor receiving the request decides whether to approve or reject it. Administrators only monitor contact request activity.",
   },
 ];
 
 export default function FaqSection() {
-  const [openFaqId, setOpenFaqId] = useState<number | null>(1);
-
-  const handleToggle = (faqId: number) => {
-    setOpenFaqId((currentId) =>
-      currentId === faqId ? null : faqId
-    );
-  };
+  const [openIndex, setOpenIndex] =
+    useState<number | null>(0);
 
   return (
     <section
       id="faq"
-      className="px-4 py-20 sm:px-6 lg:px-8"
+      className="bg-[#F8FAFC] py-20"
     >
-      <div className="mx-auto max-w-7xl">
-        {/* Heading */}
-        <div className="mx-auto mb-12 max-w-2xl text-center">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#910102]">
-            Need Help?
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-[#910102]">
+            <HelpCircle size={23} />
+          </div>
+
+          <p className="mt-5 text-sm font-bold uppercase tracking-[0.16em] text-[#910102]">
+            FAQ
           </p>
 
-          <h2 className="text-3xl font-bold tracking-tight text-[#102A43] sm:text-4xl">
-            Frequently Asked Questions
+          <h2 className="mt-3 text-3xl font-black text-[#102A43] sm:text-4xl">
+            Common questions about LifeLink
           </h2>
-
-          <p className="mt-4 leading-7 text-[#49607C]">
-            Learn how donor discovery, privacy and contact requests work.
-          </p>
         </div>
 
-        {/* FAQ items */}
-        <div className="mx-auto max-w-3xl space-y-4">
-          {faqs.map((faq) => {
-            const isOpen = openFaqId === faq.id;
+        <div className="mt-10 space-y-4">
+          {faqs.map((faq, index) => {
+            const isOpen =
+              openIndex === index;
 
             return (
               <article
-                key={faq.id}
-                className="overflow-hidden rounded-xl border border-[#E3BEB8] bg-white"
+                key={faq.question}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
               >
                 <button
                   type="button"
-                  onClick={() => handleToggle(faq.id)}
-                  aria-expanded={isOpen}
-                  aria-controls={`faq-answer-${faq.id}`}
-                  className="flex w-full items-center justify-between gap-4 p-6 text-left transition hover:bg-[#F2F4F6]"
+                  onClick={() =>
+                    setOpenIndex(
+                      isOpen ? null : index
+                    )
+                  }
+                  className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left"
                 >
                   <span className="font-bold text-[#102A43]">
                     {faq.question}
                   </span>
 
                   <ChevronDown
-                    size={22}
-                    className={`shrink-0 text-[#49607C] transition-transform duration-300 ${
-                      isOpen ? "rotate-180" : ""
+                    size={20}
+                    className={`shrink-0 text-[#910102] transition-transform duration-300 ${
+                      isOpen
+                        ? "rotate-180"
+                        : ""
                     }`}
                   />
                 </button>
 
-                {isOpen && (
-                  <div
-                    id={`faq-answer-${faq.id}`}
-                    className="border-t border-[#E3BEB8] bg-[#F8FAFC] p-6"
-                  >
-                    <p className="leading-7 text-[#49607C]">
+                <div
+                  className={`grid transition-all duration-300 ${
+                    isOpen
+                      ? "grid-rows-[1fr]"
+                      : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="border-t border-slate-100 px-5 py-5 text-sm leading-7 text-slate-600">
                       {faq.answer}
                     </p>
                   </div>
-                )}
+                </div>
               </article>
             );
           })}

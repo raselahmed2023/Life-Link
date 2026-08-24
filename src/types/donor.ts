@@ -11,19 +11,28 @@ export type ApiBloodGroup =
 export type ApiDonor = {
   id: string;
   userId: string;
-  bloodGroup: ApiBloodGroup;
+
+  bloodGroup:
+    ApiBloodGroup;
+
   district: string;
-  area: string | null;
-  lastDonation: string | null;
+
+  area:
+    | string
+    | null;
+
+  lastDonation:
+    | string
+    | null;
+
   isAvailable: boolean;
   isDeleted: boolean;
+
   createdAt: string;
   updatedAt: string;
 
   user: {
     id: string;
     name: string;
-    email: string;
-    phone: string | null;
   };
 };
