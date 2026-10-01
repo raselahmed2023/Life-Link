@@ -1,33 +1,22 @@
+
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Activity,
-  Check,
-  CheckCircle2,
-  Clock3,
   HeartHandshake,
-  MapPin,
   ShieldCheck,
-  UserRound,
   Users,
-  X,
+  Clock3,
+  RefreshCw,
 } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useRouter } from "next/navigation";
 
 import HeartLoader from "@/components/ui/HeartLoader";
 import { apiRequest } from "@/lib/api";
+import { getAuthToken, getStoredUser } from "@/lib/auth";
 import { bloodGroupToLabel } from "@/lib/bloodGroup";
-
-import type {
-  ApiBloodGroup,
-  ApiDonor,
-} from "@/types/donor";
+import type { ApiBloodGroup, ApiDonor } from "@/types/donor";
 
 type Tab =
   | "overview"
@@ -36,25 +25,13 @@ type Tab =
   | "donors"
   | "contacts";
 
-type StoredUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-};
-
 type User = {
   id: string;
   name: string;
   email: string;
   phone: string | null;
   role: string;
-
-  status:
-    | "ACTIVE"
-    | "BLOCKED";
-
+  status: "ACTIVE" | "BLOCKED";
   createdAt: string;
 };
 
@@ -79,12 +56,7 @@ type BloodRequest = {
 
 type ContactRequest = {
   id: string;
-
-  status:
-    | "PENDING"
-    | "APPROVED"
-    | "REJECTED";
-
+  status: "PENDING" | "APPROVED" | "REJECTED";
   message: string | null;
   createdAt: string;
 
@@ -116,381 +88,262 @@ type ApiResponse<T> = {
   data: T;
 };
 
+const tabs: { key: Tab; label: string }[] = [
+  { key: "overview", label: "Overview" },
+  { key: "blood", label: "Blood Requests" },
+  { key: "users", label: "Users" },
+  { key: "donors", label: "Donors" },
+  { key: "contacts", label: "Contacts" },
+];
+
 export default function AdminPage() {
   const router = useRouter();
 
-  const [admin, setAdmin] =
-    useState<StoredUser | null>(
-      null
-    );
+  const [admin, setAdmin] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
 
-  const [token, setToken] =
-    useState<string | null>(
-      null
-    );
+  const [users, setUsers] = useState<User[]>([]);
+  const [donors, setDonors] = useState<ApiDonor[]>([]);
+  const [bloodRequests, setBloodRequests] = useState<BloodRequest[]>([]);
+  const [contactRequests, setContactRequests] = useState<ContactRequest[]>([]);
 
-  const [activeTab, setActiveTab] =
-    useState<Tab>("overview");
+  const [isLoading, setIsLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const [users, setUsers] =
-    useState<User[]>([]);
+  const loadData = useCallback(async (authToken: string) => {
+    setError("");
 
-  const [donors, setDonors] =
-    useState<ApiDonor[]>([]);
+    const [
+      usersResponse,
+      donorsResponse,
+      bloodResponse,
+      contactsResponse,
+    ] = await Promise.all([
+      apiRequest<ApiResponse<User[]>>(
+        "/api/users",
+        { token: authToken }
+      ),
 
-  const [
-    bloodRequests,
-    setBloodRequests,
-  ] = useState<
-    BloodRequest[]
-  >([]);
+      apiRequest<ApiResponse<ApiDonor[]>>(
+        "/api/donors/admin/all",
+        { token: authToken }
+      ),
 
-  const [
-    contactRequests,
-    setContactRequests,
-  ] = useState<
-    ContactRequest[]
-  >([]);
+      apiRequest<ApiResponse<BloodRequest[]>>(
+        "/api/blood-requests/admin/all",
+        { token: authToken }
+      ),
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+      apiRequest<ApiResponse<ContactRequest[]>>(
+        "/api/contact-requests",
+        { token: authToken }
+      ),
+    ]);
 
-  const [updatingId, setUpdatingId] =
-    useState<string | null>(
-      null
-    );
-
-  const [error, setError] =
-    useState("");
-
-  const loadData = useCallback(
-    async (
-      authToken: string
-    ) => {
-      setError("");
-
-      const [
-        usersResponse,
-        donorsResponse,
-        bloodResponse,
-        contactsResponse,
-      ] = await Promise.all([
-        apiRequest<
-          ApiResponse<User[]>
-        >("/api/users", {
-          token: authToken,
-        }),
-
-        apiRequest<
-          ApiResponse<ApiDonor[]>
-        >("/api/donors"),
-
-        apiRequest<
-          ApiResponse<
-            BloodRequest[]
-          >
-        >(
-          "/api/blood-requests"
-        ),
-
-        apiRequest<
-          ApiResponse<
-            ContactRequest[]
-          >
-        >(
-          "/api/contact-requests",
-          {
-            token: authToken,
-          }
-        ),
-      ]);
-
-      setUsers(
-        usersResponse.data
-      );
-
-      setDonors(
-        donorsResponse.data
-      );
-
-      setBloodRequests(
-        bloodResponse.data
-      );
-
-      setContactRequests(
-        contactsResponse.data
-      );
-    },
-    []
-  );
+    setUsers(usersResponse.data);
+    setDonors(donorsResponse.data);
+    setBloodRequests(bloodResponse.data);
+    setContactRequests(contactsResponse.data);
+  }, []);
 
   useEffect(() => {
-    const initialise =
-      async () => {
-        const storedToken =
-          localStorage.getItem(
-            "lifelink_token"
-          );
+    const initialise = async () => {
+      const storedToken = getAuthToken();
+      const storedUser = getStoredUser();
 
-        const storedUser =
-          localStorage.getItem(
-            "lifelink_user"
-          );
+      if (!storedToken || !storedUser) {
+        router.replace("/login");
+        return;
+      }
 
-        if (
-          !storedToken ||
-          !storedUser
-        ) {
-          router.replace(
-            "/login"
-          );
+      if (storedUser.role !== "ADMIN") {
+        router.replace("/dashboard");
+        return;
+      }
 
-          return;
-        }
+      setToken(storedToken);
+      setAdmin({
+        ...storedUser,
+        phone: storedUser.phone ?? null,
+        status: storedUser.status as User["status"],
+        createdAt: "",
+      });
 
-        try {
-          const parsedUser =
-            JSON.parse(
-              storedUser
-            ) as StoredUser;
+      try {
+        await loadData(storedToken);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load admin dashboard"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-          if (
-            parsedUser.role !==
-            "ADMIN"
-          ) {
-            router.replace(
-              "/dashboard"
-            );
-
-            return;
-          }
-
-          setToken(
-            storedToken
-          );
-
-          setAdmin(
-            parsedUser
-          );
-
-          await loadData(
-            storedToken
-          );
-        } catch (error) {
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load admin dashboard"
-          );
-        } finally {
-          setIsLoading(
-            false
-          );
-        }
-      };
-
-    initialise();
-  }, [
-    router,
-    loadData,
-  ]);
+    void initialise();
+  }, [router, loadData]);
 
   const stats = useMemo(
     () => ({
-      users:
-        users.length,
-
-      activeDonors:
-        donors.filter(
-          (donor) =>
-            donor.isAvailable
-        ).length,
-
-      pendingBlood:
-        bloodRequests.filter(
-          (request) =>
-            request.status ===
-            "PENDING"
-        ).length,
-
-      contacts:
-        contactRequests.length,
-
-      blockedUsers:
-        users.filter(
-          (user) =>
-            user.status ===
-            "BLOCKED"
-        ).length,
+      users: users.length,
+      activeDonors: donors.filter((donor) => donor.isAvailable).length,
+      pendingBlood: bloodRequests.filter(
+        (request) => request.status === "PENDING"
+      ).length,
+      contacts: contactRequests.length,
+      blockedUsers: users.filter(
+        (user) => user.status === "BLOCKED"
+      ).length,
     }),
-    [
-      users,
-      donors,
-      bloodRequests,
-      contactRequests,
-    ]
+    [users, donors, bloodRequests, contactRequests]
   );
 
-  const updateBloodStatus =
-    async (
-      id: string,
-      status: BloodStatus
-    ) => {
-      if (!token) {
-        return;
-      }
+  const updateBloodStatus = async (
+    id: string,
+    status: BloodStatus
+  ) => {
+    if (!token) return;
 
-      setUpdatingId(id);
-      setError("");
+    setUpdatingId(id);
+    setError("");
+    setSuccess("");
 
-      try {
-        await apiRequest(
-          `/api/blood-requests/${id}/status`,
-          {
-            method: "PATCH",
-            token,
+    try {
+      await apiRequest(
+        `/api/blood-requests/${id}/status`,
+        {
+          method: "PATCH",
+          token,
+          body: JSON.stringify({ status }),
+        }
+      );
 
-            body: JSON.stringify({
-              status,
-            }),
-          }
-        );
+      setBloodRequests((current) =>
+        current.map((request) =>
+          request.id === id
+            ? { ...request, status }
+            : request
+        )
+      );
 
-        setBloodRequests(
-          (current) =>
-            current.map(
-              (request) =>
-                request.id ===
-                id
-                  ? {
-                      ...request,
-                      status,
-                    }
-                  : request
-            )
-        );
-      } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Failed to update blood request"
-        );
-      } finally {
-        setUpdatingId(
-          null
-        );
-      }
-    };
+      setSuccess("Blood request status updated successfully.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update blood request"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
-  const updateUserStatus =
-    async (
-      id: string,
+  const updateUserStatus = async (
+    id: string,
+    status: User["status"]
+  ) => {
+    if (!token || id === admin?.id) return;
 
-      status:
-        | "ACTIVE"
-        | "BLOCKED"
-    ) => {
-      if (!token) {
-        return;
-      }
+    setUpdatingId(id);
+    setError("");
+    setSuccess("");
 
-      setUpdatingId(id);
-      setError("");
+    try {
+      await apiRequest(
+        `/api/users/${id}/status`,
+        {
+          method: "PATCH",
+          token,
+          body: JSON.stringify({ status }),
+        }
+      );
 
-      try {
-        await apiRequest(
-          `/api/users/${id}/status`,
-          {
-            method: "PATCH",
-            token,
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === id
+            ? { ...user, status }
+            : user
+        )
+      );
 
-            body: JSON.stringify({
-              status,
-            }),
-          }
-        );
+      setSuccess("User status updated successfully.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update user"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
-        setUsers(
-          (current) =>
-            current.map(
-              (user) =>
-                user.id === id
-                  ? {
-                      ...user,
-                      status,
-                    }
-                  : user
-            )
-        );
-      } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Failed to update user"
-        );
-      } finally {
-        setUpdatingId(
-          null
-        );
-      }
-    };
+  const deactivateDonor = async (id: string) => {
+    if (!token) return;
 
-  const deactivateDonor =
-    async (
-      id: string
-    ) => {
-      if (!token) {
-        return;
-      }
+    const confirmed = window.confirm(
+      "Deactivate this donor profile?"
+    );
 
-      const confirmed =
-        window.confirm(
-          "Deactivate this donor profile?"
-        );
+    if (!confirmed) return;
 
-      if (!confirmed) {
-        return;
-      }
+    setUpdatingId(id);
+    setError("");
+    setSuccess("");
 
-      setUpdatingId(id);
-      setError("");
+    try {
+      await apiRequest(
+        `/api/donors/${id}`,
+        {
+          method: "DELETE",
+          token,
+        }
+      );
 
-      try {
-        await apiRequest(
-          `/api/donors/${id}`,
-          {
-            method:
-              "DELETE",
-            token,
-          }
-        );
+      setDonors((current) =>
+        current.filter((donor) => donor.id !== id)
+      );
 
-        setDonors(
-          (current) =>
-            current.filter(
-              (donor) =>
-                donor.id !==
-                id
-            )
-        );
-      } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Failed to deactivate donor"
-        );
-      } finally {
-        setUpdatingId(
-          null
-        );
-      }
-    };
+      setSuccess("Donor profile deactivated successfully.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to deactivate donor"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const refresh = async () => {
+    if (!token) return;
+
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      await loadData(token);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Refresh failed"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
       <main className="flex min-h-[75vh] items-center justify-center bg-[#F8FAFC] text-[#910102]">
         <HeartLoader
-          text="Loading admin control center..."
+          text="Loading admin dashboard..."
           size={34}
         />
       </main>
@@ -504,446 +357,193 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* HEADER */}
         <header className="rounded-3xl bg-gradient-to-r from-[#700000] to-[#A90000] p-7 text-white shadow-lg sm:p-9">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
             <div>
               <div className="flex items-center gap-2 text-sm font-bold text-white/75">
-                <ShieldCheck
-                  size={19}
-                />
-
+                <ShieldCheck size={19} />
                 ADMIN CONTROL CENTER
               </div>
 
               <h1 className="mt-3 text-3xl font-black">
-                LifeLink
-                Administration
+                LifeLink Administration
               </h1>
 
               <p className="mt-2 text-white/75">
-                Manage users,
-                donors and blood
-                requests while
-                monitoring platform
-                activity.
+                Manage users, donors, blood requests and contact requests.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 backdrop-blur">
-              <p className="text-xs text-white/65">
-                Administrator
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3">
+                <p className="text-xs text-white/65">Administrator</p>
+                <p className="mt-1 font-bold">{admin.name}</p>
+              </div>
 
-              <p className="mt-1 font-bold">
-                {admin.name}
-              </p>
+              <button
+                type="button"
+                onClick={() => void refresh()}
+                title="Refresh data"
+                className="rounded-xl border border-white/20 bg-white/10 p-3 hover:bg-white/20"
+              >
+                <RefreshCw size={20} />
+              </button>
             </div>
           </div>
         </header>
 
-        {/* STATS */}
         <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            icon={
-              <Users
-                size={22}
-              />
-            }
+            icon={<Users size={22} />}
             title="Users"
-            value={
-              stats.users
-            }
+            value={stats.users}
           />
 
           <StatCard
-            icon={
-              <HeartHandshake
-                size={22}
-              />
-            }
-            title="Active Donors"
-            value={
-              stats.activeDonors
-            }
+            icon={<HeartHandshake size={22} />}
+            title="Available Donors"
+            value={stats.activeDonors}
           />
 
           <StatCard
-            icon={
-              <Clock3
-                size={22}
-              />
-            }
+            icon={<Clock3 size={22} />}
             title="Pending Blood"
-            value={
-              stats.pendingBlood
-            }
+            value={stats.pendingBlood}
           />
 
           <StatCard
-            icon={
-              <Activity
-                size={22}
-              />
-            }
+            icon={<Activity size={22} />}
             title="Contact Requests"
-            value={
-              stats.contacts
-            }
+            value={stats.contacts}
           />
         </section>
 
-        {/* TABS */}
-        <div className="mt-7 overflow-x-auto">
-          <div className="inline-flex min-w-max gap-1 rounded-2xl border border-[#E7E9EE] bg-white p-1.5 shadow-sm">
-            <AdminTab
-              label="Overview"
-              active={
-                activeTab ===
-                "overview"
-              }
-              onClick={() =>
-                setActiveTab(
-                  "overview"
-                )
-              }
-            />
-
-            <AdminTab
-              label="Blood Requests"
-              active={
-                activeTab ===
-                "blood"
-              }
-              onClick={() =>
-                setActiveTab(
-                  "blood"
-                )
-              }
-            />
-
-            <AdminTab
-              label="Users"
-              active={
-                activeTab ===
-                "users"
-              }
-              onClick={() =>
-                setActiveTab(
-                  "users"
-                )
-              }
-            />
-
-            <AdminTab
-              label="Donors"
-              active={
-                activeTab ===
-                "donors"
-              }
-              onClick={() =>
-                setActiveTab(
-                  "donors"
-                )
-              }
-            />
-
-            <AdminTab
-              label="Contacts"
-              active={
-                activeTab ===
-                "contacts"
-              }
-              onClick={() =>
-                setActiveTab(
-                  "contacts"
-                )
-              }
-            />
-          </div>
-        </div>
+        <nav className="mt-7 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                activeTab === tab.key
+                  ? "bg-[#910102] text-white"
+                  : "text-slate-600 hover:bg-red-50 hover:text-[#910102]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
         {error && (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-semibold text-red-700">
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}
           </div>
         )}
 
-        {/* TAB CONTENT */}
-        <section className="mt-7">
-          {activeTab ===
-            "overview" && (
-            <Overview
-              stats={stats}
-              requests={
-                bloodRequests
-              }
-            />
-          )}
-
-          {activeTab ===
-            "blood" && (
-            <BloodRequestsTab
-              requests={
-                bloodRequests
-              }
-              updatingId={
-                updatingId
-              }
-              onUpdate={
-                updateBloodStatus
-              }
-            />
-          )}
-
-          {activeTab ===
-            "users" && (
-            <UsersTab
-              users={users}
-              updatingId={
-                updatingId
-              }
-              adminId={
-                admin.id
-              }
-              onStatusChange={
-                updateUserStatus
-              }
-            />
-          )}
-
-          {activeTab ===
-            "donors" && (
-            <DonorsTab
-              donors={donors}
-              updatingId={
-                updatingId
-              }
-              onDeactivate={
-                deactivateDonor
-              }
-            />
-          )}
-
-          {activeTab ===
-            "contacts" && (
-            <ContactsTab
-              requests={
-                contactRequests
-              }
-            />
-          )}
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function Overview({
-  stats,
-  requests,
-}: {
-  stats: {
-    users: number;
-    activeDonors: number;
-    pendingBlood: number;
-    contacts: number;
-    blockedUsers: number;
-  };
-
-  requests: BloodRequest[];
-}) {
-  return (
-    <div className="grid gap-7 lg:grid-cols-[1.2fr_0.8fr]">
-      <AdminPanel
-        title="Recent Blood Requests"
-      >
-        {requests.length ===
-        0 ? (
-          <EmptyState
-            text="No blood requests found."
-          />
-        ) : (
-          requests
-            .slice(0, 5)
-            .map(
-              (request) => (
-                <div
-                  key={
-                    request.id
-                  }
-                  className="flex items-center justify-between gap-4 border-b border-slate-100 py-4 last:border-0"
-                >
-                  <div>
-                    <p className="font-bold text-[#102A43]">
-                      {
-                        request.patientName
-                      }
-                    </p>
-
-                    <p className="mt-1 text-sm text-[#64748B]">
-                      {
-                        request.hospital
-                      }{" "}
-                      •{" "}
-                      {
-                        request.district
-                      }
-                    </p>
-                  </div>
-
-                  <StatusBadge
-                    status={
-                      request.status
-                    }
-                  />
-                </div>
-              )
-            )
+        {success && (
+          <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+            {success}
+          </div>
         )}
-      </AdminPanel>
 
-      <AdminPanel
-        title="Platform Health"
-      >
-        <HealthRow
-          label="Registered Users"
-          value={
-            stats.users
-          }
-        />
+        <div className="mt-7">
+          {activeTab === "overview" && (
+            <section className="grid gap-6 lg:grid-cols-2">
+              <Panel title="Platform Overview">
+                <div className="space-y-4 text-sm">
+                  <InfoLine label="Total Users" value={stats.users} />
+                  <InfoLine label="Available Donors" value={stats.activeDonors} />
+                  <InfoLine label="Blocked Users" value={stats.blockedUsers} />
+                  <InfoLine label="Contact Requests" value={stats.contacts} />
+                </div>
+              </Panel>
 
-        <HealthRow
-          label="Active Donors"
-          value={
-            stats.activeDonors
-          }
-        />
-
-        <HealthRow
-          label="Pending Blood Requests"
-          value={
-            stats.pendingBlood
-          }
-        />
-
-        <HealthRow
-          label="Blocked Users"
-          value={
-            stats.blockedUsers
-          }
-        />
-
-        <HealthRow
-          label="Contact Activity"
-          value={
-            stats.contacts
-          }
-        />
-      </AdminPanel>
-    </div>
-  );
-}
-
-function BloodRequestsTab({
-  requests,
-  updatingId,
-  onUpdate,
-}: {
-  requests: BloodRequest[];
-  updatingId:
-    | string
-    | null;
-
-  onUpdate: (
-    id: string,
-    status: BloodStatus
-  ) => void;
-}) {
-  return (
-    <AdminPanel
-      title="Blood Request Management"
-    >
-      {requests.length ===
-      0 ? (
-        <EmptyState
-          text="No blood requests available."
-        />
-      ) : (
-        <div className="space-y-4">
-          {requests.map(
-            (request) => (
-              <article
-                key={
-                  request.id
-                }
-                className="rounded-2xl border border-[#E7E9EE] p-5"
-              >
-                <div className="flex flex-col justify-between gap-5 lg:flex-row">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-lg font-bold text-[#102A43]">
-                        {
-                          request.patientName
-                        }
-                      </h3>
-
-                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-[#910102]">
-                        {
-                          bloodGroupToLabel[
-                            request
-                              .bloodGroup
-                          ]
-                        }
-                      </span>
-
-                      <StatusBadge
-                        status={
-                          request.status
+              <Panel title="Blood Request Overview">
+                <div className="space-y-4 text-sm">
+                  {(["PENDING", "APPROVED", "REJECTED", "COMPLETED"] as const)
+                    .map((status) => (
+                      <InfoLine
+                        key={status}
+                        label={status}
+                        value={
+                          bloodRequests.filter(
+                            (request) => request.status === status
+                          ).length
                         }
                       />
-                    </div>
+                    ))}
+                </div>
 
-                    <p className="mt-3 text-sm text-[#64748B]">
-                      {
-                        request.hospital
-                      }{" "}
-                      •{" "}
-                      {
-                        request.district
-                      }{" "}
-                      •{" "}
-                      {new Date(
-                        request.requiredDate
-                      ).toLocaleDateString()}
-                    </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("blood")}
+                  className="mt-6 text-sm font-bold text-[#910102] hover:underline"
+                >
+                  Manage Blood Requests
+                </button>
+              </Panel>
+            </section>
+          )}
 
-                    {request.message && (
-                      <p className="mt-3 rounded-xl bg-[#F8FAFC] p-3 text-sm leading-6 text-[#64748B]">
-                        {
-                          request.message
-                        }
-                      </p>
-                    )}
-                  </div>
+          {activeTab === "blood" && (
+            <Panel title={`Blood Requests (${bloodRequests.length})`}>
+              {bloodRequests.length === 0 ? (
+                <EmptyState text="No blood requests found." />
+              ) : (
+                <div className="space-y-4">
+                  {bloodRequests.map((request) => (
+                    <article
+                      key={request.id}
+                      className="rounded-2xl border border-slate-200 p-5"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <span className="rounded-xl bg-[#910102] px-3 py-2 font-black text-white">
+                              {bloodGroupToLabel[request.bloodGroup]}
+                            </span>
 
-                  <div className="flex flex-wrap gap-2">
-                    {updatingId ===
-                    request.id ? (
-                      <HeartLoader
-                        text="Updating..."
-                        size={18}
-                      />
-                    ) : (
-                      <>
-                        {request.status ===
-                          "PENDING" && (
+                            <div>
+                              <h3 className="font-bold text-[#102A43]">
+                                {request.patientName}
+                              </h3>
+
+                              <p className="text-sm text-slate-500">
+                                {request.hospital}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-1 text-sm text-slate-600">
+                            <p>District: {request.district}</p>
+                            <p>
+                              Required:{" "}
+                              {new Date(
+                                request.requiredDate
+                              ).toLocaleString()}
+                            </p>
+                            <p>Contact: {request.phone}</p>
+
+                            {request.message && (
+                              <p className="whitespace-pre-wrap break-words">
+                                {request.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <StatusBadge status={request.status} />
+                      </div>
+
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {request.status === "PENDING" && (
                           <>
                             <ActionButton
                               label="Approve"
-                              type="approve"
+                              disabled={updatingId === request.id}
                               onClick={() =>
-                                onUpdate(
+                                void updateBloodStatus(
                                   request.id,
                                   "APPROVED"
                                 )
@@ -952,9 +552,10 @@ function BloodRequestsTab({
 
                             <ActionButton
                               label="Reject"
-                              type="reject"
+                              secondary
+                              disabled={updatingId === request.id}
                               onClick={() =>
-                                onUpdate(
+                                void updateBloodStatus(
                                   request.id,
                                   "REJECTED"
                                 )
@@ -963,362 +564,202 @@ function BloodRequestsTab({
                           </>
                         )}
 
-                        {request.status ===
-                          "APPROVED" && (
+                        {request.status === "APPROVED" && (
                           <ActionButton
-                            label="Complete"
-                            type="complete"
+                            label="Mark Completed"
+                            disabled={updatingId === request.id}
                             onClick={() =>
-                              onUpdate(
+                              void updateBloodStatus(
                                 request.id,
                                 "COMPLETED"
                               )
                             }
                           />
                         )}
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              </article>
-            )
+              )}
+            </Panel>
           )}
-        </div>
-      )}
-    </AdminPanel>
-  );
-}
 
-function UsersTab({
-  users,
-  updatingId,
-  adminId,
-  onStatusChange,
-}: {
-  users: User[];
-  updatingId:
-    | string
-    | null;
+          {activeTab === "users" && (
+            <Panel title={`Users (${users.length})`}>
+              {users.length === 0 ? (
+                <EmptyState text="No users found." />
+              ) : (
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <article
+                      key={user.id}
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"
+                    >
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-[#102A43]">
+                          {user.name}
+                        </h3>
 
-  adminId: string;
+                        <p className="break-all text-sm text-slate-600">
+                          {user.email}
+                        </p>
 
-  onStatusChange: (
-    id: string,
-    status:
-      | "ACTIVE"
-      | "BLOCKED"
-  ) => void;
-}) {
-  return (
-    <AdminPanel
-      title="User Management"
-    >
-      {users.length === 0 ? (
-        <EmptyState
-          text="No users found."
-        />
-      ) : (
-        <div className="space-y-3">
-          {users.map(
-            (user) => (
-              <div
-                key={user.id}
-                className="flex flex-col justify-between gap-4 rounded-2xl border border-[#E7E9EE] p-5 md:flex-row md:items-center"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-[#910102]">
-                    <UserRound
-                      size={22}
-                    />
-                  </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {user.role} • {user.phone || "No phone"}
+                        </p>
 
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-[#102A43]">
-                        {
-                          user.name
-                        }
-                      </h3>
+                        <div className="mt-2">
+                          <StatusBadge status={user.status} />
+                        </div>
+                      </div>
 
-                      {user.role ===
-                        "ADMIN" && (
-                        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                          ADMIN
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="mt-1 text-sm text-[#64748B]">
-                      {
-                        user.email
-                      }
-                    </p>
-                  </div>
+                      {user.id !== admin.id &&
+                        user.role !== "ADMIN" && (
+                          <ActionButton
+                            label={
+                              user.status === "ACTIVE"
+                                ? "Block User"
+                                : "Unblock User"
+                            }
+                            secondary={user.status === "ACTIVE"}
+                            disabled={updatingId === user.id}
+                            onClick={() =>
+                              void updateUserStatus(
+                                user.id,
+                                user.status === "ACTIVE"
+                                  ? "BLOCKED"
+                                  : "ACTIVE"
+                              )
+                            }
+                          />
+                        )}
+                    </article>
+                  ))}
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <StatusBadge
-                    status={
-                      user.status
-                    }
-                  />
-
-                  {user.id !==
-                    adminId &&
-                    user.role !==
-                      "ADMIN" && (
-                      <button
-                        type="button"
-                        disabled={
-                          updatingId ===
-                          user.id
-                        }
-                        onClick={() =>
-                          onStatusChange(
-                            user.id,
-                            user.status ===
-                              "ACTIVE"
-                              ? "BLOCKED"
-                              : "ACTIVE"
-                          )
-                        }
-                        className={`rounded-lg px-4 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                          user.status ===
-                          "ACTIVE"
-                            ? "bg-red-50 text-red-700 hover:bg-red-100"
-                            : "bg-green-50 text-green-700 hover:bg-green-100"
-                        }`}
-                      >
-                        {updatingId ===
-                        user.id
-                          ? "Updating..."
-                          : user.status ===
-                              "ACTIVE"
-                            ? "Block"
-                            : "Unblock"}
-                      </button>
-                    )}
-                </div>
-              </div>
-            )
+              )}
+            </Panel>
           )}
-        </div>
-      )}
-    </AdminPanel>
-  );
-}
 
-function DonorsTab({
-  donors,
-  updatingId,
-  onDeactivate,
-}: {
-  donors: ApiDonor[];
+          {activeTab === "donors" && (
+            <Panel title={`Donor Profiles (${donors.length})`}>
+              {donors.length === 0 ? (
+                <EmptyState text="No donor profiles found." />
+              ) : (
+                <div className="space-y-3">
+                  {donors.map((donor) => (
+                    <article
+                      key={donor.id}
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                          <span className="rounded-xl bg-[#910102] px-3 py-2 font-black text-white">
+                            {bloodGroupToLabel[donor.bloodGroup]}
+                          </span>
 
-  updatingId:
-    | string
-    | null;
+                          <div>
+                            <h3 className="font-bold text-[#102A43]">
+                              {donor.user.name}
+                            </h3>
 
-  onDeactivate: (
-    id: string
-  ) => void;
-}) {
-  return (
-    <AdminPanel
-      title="Donor Management"
-    >
-      {donors.length === 0 ? (
-        <EmptyState
-          text="No donors found."
-        />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {donors.map(
-            (donor) => (
-              <article
-                key={
-                  donor.id
-                }
-                className="rounded-2xl border border-[#E7E9EE] p-5"
-              >
-                <div className="flex justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-[#102A43]">
-                      {
-                        donor.user
-                          .name
-                      }
-                    </h3>
+                            <p className="text-sm text-slate-600">
+                              {donor.area
+                                ? `${donor.area}, `
+                                : ""}
+                              {donor.district}
+                            </p>
+                          </div>
+                        </div>
 
-                    <p className="mt-1 flex items-center gap-1 text-sm text-[#64748B]">
-                      <MapPin
-                        size={14}
+                        <p className="mt-2 text-xs font-semibold text-slate-500">
+                          {donor.isAvailable
+                            ? "Available (self-reported)"
+                            : "Unavailable"}
+                        </p>
+                      </div>
+
+                      <ActionButton
+                        label="Deactivate"
+                        secondary
+                        disabled={updatingId === donor.id}
+                        onClick={() => void deactivateDonor(donor.id)}
                       />
-
-                      {donor.area
-                        ? `${donor.area}, `
-                        : ""}
-
-                      {
-                        donor.district
-                      }
-                    </p>
-                  </div>
-
-                  <span className="flex h-11 min-w-11 items-center justify-center rounded-xl bg-[#910102] px-2 text-sm font-black text-white">
-                    {
-                      bloodGroupToLabel[
-                        donor
-                          .bloodGroup
-                      ]
-                    }
-                  </span>
+                    </article>
+                  ))}
                 </div>
+              )}
+            </Panel>
+          )}
 
-                <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      donor.isAvailable
-                        ? "bg-green-50 text-green-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {donor.isAvailable
-                      ? "Available"
-                      : "Unavailable"}
-                  </span>
+          {activeTab === "contacts" && (
+            <Panel title={`Contact Requests (${contactRequests.length})`}>
+              {contactRequests.length === 0 ? (
+                <EmptyState text="No contact requests found." />
+              ) : (
+                <div className="space-y-4">
+                  {contactRequests.map((request) => (
+                    <article
+                      key={request.id}
+                      className="rounded-xl border border-slate-200 p-5"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-bold text-[#102A43]">
+                            {request.requester.name}
+                            {" → "}
+                            {request.donor.user.name}
+                          </h3>
 
-                  <button
-                    type="button"
-                    disabled={
-                      updatingId ===
-                      donor.id
-                    }
-                    onClick={() =>
-                      onDeactivate(
-                        donor.id
-                      )
-                    }
-                    className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {updatingId ===
-                    donor.id
-                      ? "Updating..."
-                      : "Deactivate"}
-                  </button>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Blood Group:{" "}
+                            {bloodGroupToLabel[request.donor.bloodGroup]}
+                          </p>
+
+                          <p className="text-sm text-slate-600">
+                            District: {request.donor.district}
+                          </p>
+
+                          <p className="mt-2 text-sm text-slate-600">
+                            Requester: {request.requester.email}
+                          </p>
+
+                          <p className="text-sm text-slate-600">
+                            Donor: {request.donor.user.email}
+                          </p>
+
+                          {request.message && (
+                            <p className="mt-3 whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+                              {request.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <StatusBadge status={request.status} />
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              </article>
-            )
+              )}
+            </Panel>
           )}
         </div>
-      )}
-    </AdminPanel>
-  );
-}
-
-function ContactsTab({
-  requests,
-}: {
-  requests:
-    ContactRequest[];
-}) {
-  return (
-    <AdminPanel
-      title="Contact Request Monitoring"
-    >
-      <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-700">
-        Admin can monitor these
-        requests but cannot approve
-        or reject them. Only the
-        donor controls that decision.
       </div>
-
-      {requests.length ===
-      0 ? (
-        <EmptyState
-          text="No contact requests found."
-        />
-      ) : (
-        <div className="space-y-4">
-          {requests.map(
-            (request) => (
-              <div
-                key={
-                  request.id
-                }
-                className="rounded-2xl border border-[#E7E9EE] p-5"
-              >
-                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                  <div>
-                    <p className="font-bold text-[#102A43]">
-                      {
-                        request
-                          .requester
-                          .name
-                      }{" "}
-                      →{" "}
-                      {
-                        request
-                          .donor
-                          .user
-                          .name
-                      }
-                    </p>
-
-                    <p className="mt-1 text-sm text-[#64748B]">
-                      {
-                        bloodGroupToLabel[
-                          request
-                            .donor
-                            .bloodGroup
-                        ]
-                      }{" "}
-                      •{" "}
-                      {
-                        request
-                          .donor
-                          .district
-                      }
-                    </p>
-
-                    {request.message && (
-                      <p className="mt-3 rounded-lg bg-[#F8FAFC] p-3 text-sm text-[#49607C]">
-                        {
-                          request.message
-                        }
-                      </p>
-                    )}
-                  </div>
-
-                  <StatusBadge
-                    status={
-                      request.status
-                    }
-                  />
-                </div>
-              </div>
-            )
-          )}
-        </div>
-      )}
-    </AdminPanel>
+    </main>
   );
 }
 
-function AdminPanel({
+function Panel({
   title,
   children,
 }: {
   title: string;
-  children:
-    React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm sm:p-7">
+    <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm">
       <h2 className="mb-6 text-xl font-bold text-[#102A43]">
         {title}
       </h2>
-
       {children}
     </section>
   );
@@ -1329,124 +770,25 @@ function StatCard({
   title,
   value,
 }: {
-  icon:
-    React.ReactNode;
+  icon: React.ReactNode;
   title: string;
   value: number;
 }) {
   return (
-    <article className="rounded-2xl border border-[#E7E9EE] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+    <article className="rounded-2xl border border-[#E7E9EE] bg-white p-5 shadow-sm">
       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-[#910102]">
         {icon}
       </div>
 
-      <p className="mt-4 text-sm text-[#64748B]">
-        {title}
-      </p>
-
-      <p className="mt-1 text-3xl font-black text-[#102A43]">
+      <p className="mt-4 text-sm text-[#64748B]">{title}</p>
+      <p className="mt-1 text-2xl font-black text-[#102A43]">
         {value}
       </p>
     </article>
   );
 }
 
-function AdminTab({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
-        active
-          ? "bg-[#910102] text-white shadow-sm"
-          : "text-[#64748B] hover:bg-red-50 hover:text-[#910102]"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function ActionButton({
-  label,
-  type,
-  onClick,
-}: {
-  label: string;
-
-  type:
-    | "approve"
-    | "reject"
-    | "complete";
-
-  onClick: () => void;
-}) {
-  const classes =
-    type === "approve"
-      ? "bg-green-600 text-white hover:bg-green-700"
-      : type ===
-          "reject"
-        ? "bg-red-50 text-red-700 hover:bg-red-100"
-        : "bg-blue-600 text-white hover:bg-blue-700";
-
-  const Icon =
-    type === "approve"
-      ? Check
-      : type ===
-          "reject"
-        ? X
-        : CheckCircle2;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold ${classes}`}
-    >
-      <Icon size={15} />
-      {label}
-    </button>
-  );
-}
-
-function StatusBadge({
-  status,
-}: {
-  status: string;
-}) {
-  const classes =
-    status ===
-      "APPROVED" ||
-    status === "ACTIVE"
-      ? "bg-green-50 text-green-700"
-      : status ===
-            "REJECTED" ||
-          status ===
-            "BLOCKED"
-        ? "bg-red-50 text-red-700"
-        : status ===
-            "COMPLETED"
-          ? "bg-blue-50 text-blue-700"
-          : "bg-amber-50 text-amber-700";
-
-  return (
-    <span
-      className={`self-start rounded-full px-3 py-1 text-xs font-bold ${classes}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function HealthRow({
+function InfoLine({
   label,
   value,
 }: {
@@ -1454,25 +796,62 @@ function HealthRow({
   value: number;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-4 last:border-0">
-      <span className="text-sm text-[#64748B]">
-        {label}
-      </span>
-
-      <strong className="text-xl text-[#102A43]">
-        {value}
-      </strong>
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3 last:border-0">
+      <span className="font-medium text-slate-600">{label}</span>
+      <span className="font-bold text-[#102A43]">{value}</span>
     </div>
   );
 }
 
-function EmptyState({
-  text,
+function StatusBadge({ status }: { status: string }) {
+  const color =
+    status === "APPROVED" || status === "ACTIVE"
+      ? "bg-green-50 text-green-700"
+      : status === "PENDING"
+        ? "bg-amber-50 text-amber-700"
+        : status === "REJECTED" || status === "BLOCKED"
+          ? "bg-red-50 text-red-700"
+          : "bg-slate-100 text-slate-700";
+
+  return (
+    <span
+      className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${color}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  disabled = false,
+  secondary = false,
 }: {
-  text: string;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  secondary?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[#D7DEE7] px-5 py-10 text-center text-sm font-medium text-[#64748B]">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-xl px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        secondary
+          ? "border border-red-200 bg-white text-[#910102] hover:bg-red-50"
+          : "bg-[#910102] text-white hover:bg-[#B42318]"
+      }`}
+    >
+      {disabled ? "Updating..." : label}
+    </button>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
       {text}
     </div>
   );

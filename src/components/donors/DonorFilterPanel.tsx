@@ -1,7 +1,8 @@
+
 "use client";
 
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   RotateCcw,
   Search,
@@ -23,17 +24,6 @@ const bloodGroups = [
   "O-",
 ];
 
-const districts = [
-  "Dhaka",
-  "Chattogram",
-  "Rajshahi",
-  "Khulna",
-  "Sylhet",
-  "Barishal",
-  "Rangpur",
-  "Mymensingh",
-];
-
 export default function DonorFilterPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,6 +40,12 @@ export default function DonorFilterPanel() {
     searchParams.get("district") ?? ""
   );
 
+  useEffect(() => {
+    setSearch(searchParams.get("search") ?? "");
+    setBloodGroup(searchParams.get("bloodGroup") ?? "");
+    setDistrict(searchParams.get("district") ?? "");
+  }, [searchParams]);
+
   const handleSubmit = (
     event: FormEvent<HTMLFormElement>
   ) => {
@@ -57,109 +53,103 @@ export default function DonorFilterPanel() {
 
     const params = new URLSearchParams();
 
-    if (search.trim()) {
-      params.set("search", search.trim());
+    const cleanSearch = search.trim();
+    const cleanDistrict = district.trim();
+
+    if (cleanSearch) {
+      params.set("search", cleanSearch);
     }
 
     if (bloodGroup) {
       params.set("bloodGroup", bloodGroup);
     }
 
-    if (district) {
-      params.set("district", district);
+    if (cleanDistrict) {
+      params.set("district", cleanDistrict);
     }
 
     const query = params.toString();
 
     router.push(
-      query ? `/donors?${query}` : "/donors"
+      query ? `/donors?${query}` : "/donors",
+      { scroll: false }
     );
   };
 
-  const handleClearFilters = () => {
+  const handleReset = () => {
     setSearch("");
     setBloodGroup("");
     setDistrict("");
 
-    router.push("/donors");
+    router.push("/donors", {
+      scroll: false,
+    });
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-8 rounded-2xl border border-[#E9D0CC] bg-white p-5 shadow-sm sm:p-6"
+      className="rounded-3xl border border-[#E7E9EE] bg-white p-5 shadow-sm sm:p-7"
     >
-      <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal
-              size={20}
-              className="text-[#910102]"
-            />
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal
+            size={20}
+            className="text-[#910102]"
+          />
 
-            <h2 className="text-lg font-bold text-[#102A43]">
-              Search Donors
-            </h2>
-          </div>
-
-          <p className="mt-1 text-sm text-[#64748B]">
-            Find donors by name, blood group, or location.
-          </p>
+          <h2 className="text-xl font-bold text-[#102A43]">
+            Find Blood Donors
+          </h2>
         </div>
 
         <button
           type="button"
-          onClick={handleClearFilters}
-          className="inline-flex items-center gap-2 self-start rounded-lg px-3 py-2 text-sm font-semibold text-[#64748B] transition hover:bg-red-50 hover:text-[#910102] sm:self-auto"
+          onClick={handleReset}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[#64748B] transition hover:text-[#910102]"
         >
-          <RotateCcw size={16} />
-          Clear
+          <RotateCcw size={15} />
+          Reset
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+      <div className="grid gap-5 md:grid-cols-3">
         <div>
           <label
-            htmlFor="donorSearch"
+            htmlFor="donor-search"
             className="mb-2 block text-sm font-semibold text-[#102A43]"
           >
             Search
           </label>
 
-          <div className="relative">
-            <Search
-              size={19}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]"
-            />
-
-            <input
-              id="donorSearch"
-              type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
-              placeholder="Name, district or area"
-              className="h-12 w-full rounded-xl border border-[#D7DEE7] bg-[#FBFCFD] pl-10 pr-4 text-sm text-[#102A43] outline-none transition placeholder:text-[#94A3B8] focus:border-[#B42318] focus:bg-white focus:ring-2 focus:ring-[#B42318]/10"
-            />
-          </div>
+          <input
+            id="donor-search"
+            type="search"
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+            placeholder="Name or location"
+            maxLength={100}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#910102] focus:ring-1 focus:ring-[#910102]"
+          />
         </div>
 
         <div>
           <label
-            htmlFor="bloodGroup"
+            htmlFor="donor-blood-group"
             className="mb-2 block text-sm font-semibold text-[#102A43]"
           >
             Blood Group
           </label>
 
           <select
-            id="bloodGroup"
+            id="donor-blood-group"
             value={bloodGroup}
             onChange={(event) =>
               setBloodGroup(event.target.value)
             }
-            className="h-12 w-full cursor-pointer rounded-xl border border-[#D7DEE7] bg-[#FBFCFD] px-4 text-sm text-[#102A43] outline-none transition focus:border-[#B42318] focus:bg-white focus:ring-2 focus:ring-[#B42318]/10"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#910102] focus:ring-1 focus:ring-[#910102]"
           >
             <option value="">
               All Blood Groups
@@ -178,44 +168,34 @@ export default function DonorFilterPanel() {
 
         <div>
           <label
-            htmlFor="district"
+            htmlFor="donor-district"
             className="mb-2 block text-sm font-semibold text-[#102A43]"
           >
             District
           </label>
 
-          <select
-            id="district"
+          <input
+            id="donor-district"
+            type="search"
             value={district}
             onChange={(event) =>
               setDistrict(event.target.value)
             }
-            className="h-12 w-full cursor-pointer rounded-xl border border-[#D7DEE7] bg-[#FBFCFD] px-4 text-sm text-[#102A43] outline-none transition focus:border-[#B42318] focus:bg-white focus:ring-2 focus:ring-[#B42318]/10"
-          >
-            <option value="">
-              All Districts
-            </option>
-
-            {districts.map((districtName) => (
-              <option
-                key={districtName}
-                value={districtName}
-              >
-                {districtName}
-              </option>
-            ))}
-          </select>
+            placeholder="Enter district"
+            maxLength={100}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#910102] focus:ring-1 focus:ring-[#910102]"
+          />
         </div>
+      </div>
 
-        <div className="flex items-end">
-          <button
-            type="submit"
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#A90000] px-6 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#910102] hover:shadow-md active:translate-y-0 lg:w-auto"
-          >
-            <Search size={18} />
-            Search
-          </button>
-        </div>
+      <div className="mt-6 flex justify-end">
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#910102] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#B42318]"
+        >
+          <Search size={17} />
+          Search Donors
+        </button>
       </div>
     </form>
   );

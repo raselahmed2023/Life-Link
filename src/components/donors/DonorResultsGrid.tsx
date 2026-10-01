@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Heart,
@@ -29,24 +30,17 @@ export default function DonorResultsGrid() {
   const searchParams = useSearchParams();
 
   const [donors, setDonors] = useState<ApiDonor[]>([]);
-  const [selectedDonor, setSelectedDonor] =
-    useState<ApiDonor | null>(null);
-
-  const [isLoading, setIsLoading] =
-    useState(true);
-
+  const [selectedDonor, setSelectedDonor] = useState<ApiDonor | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const search =
-    searchParams.get("search")?.toLowerCase() ?? "";
-
-  const bloodGroup =
-    searchParams.get("bloodGroup") ?? "";
-
-  const district =
-    searchParams.get("district") ?? "";
+  const search = searchParams.get("search")?.toLowerCase() ?? "";
+  const bloodGroup = searchParams.get("bloodGroup") ?? "";
+  const district = searchParams.get("district") ?? "";
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchDonors = async () => {
       setIsLoading(true);
       setError("");
@@ -54,16 +48,8 @@ export default function DonorResultsGrid() {
       try {
         const params = new URLSearchParams();
 
-        if (bloodGroup) {
-          const apiBloodGroup =
-            bloodGroupToApi[bloodGroup];
-
-          if (apiBloodGroup) {
-            params.set(
-              "bloodGroup",
-              apiBloodGroup
-            );
-          }
+        if (bloodGroup && bloodGroupToApi[bloodGroup]) {
+          params.set("bloodGroup", bloodGroupToApi[bloodGroup]);
         }
 
         if (district) {
@@ -72,61 +58,61 @@ export default function DonorResultsGrid() {
 
         const query = params.toString();
 
-        const response =
-          await apiRequest<DonorResponse>(
-            `/api/donors${
-              query ? `?${query}` : ""
-            }`
-          );
-
-        setDonors(response.data);
-      } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Failed to load donors"
+        const response = await apiRequest<DonorResponse>(
+          `/api/donors${query ? `?${query}` : ""}`
         );
+
+        if (!cancelled) {
+          setDonors(
+            response.data.filter((donor) => donor.isAvailable)
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load donors"
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchDonors();
+    void fetchDonors();
+
+    return () => {
+      cancelled = true;
+    };
   }, [bloodGroup, district]);
 
-  const filteredDonors =
-    donors.filter((donor) => {
-      if (!search) {
-        return true;
-      }
+  const filteredDonors = useMemo(() => {
+    return donors.filter((donor) => {
+      if (!search) return true;
 
       const searchableText =
-        `${donor.user.name} ${donor.district} ${
-          donor.area ?? ""
-        }`.toLowerCase();
+        `${donor.user.name} ${donor.district} ${donor.area ?? ""}`.toLowerCase();
 
       return searchableText.includes(search);
     });
+  }, [donors, search]);
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-red-100 bg-white">
-        <div className="text-[#910102]">
-          <HeartLoader
-            text="Finding available donors..."
-            size={32}
-          />
-        </div>
+      <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-red-100 bg-white text-[#910102]">
+        <HeartLoader
+          text="Finding available donors..."
+          size={32}
+        />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-        <p className="font-semibold text-red-700">
-          {error}
-        </p>
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center font-semibold text-red-700">
+        {error}
       </div>
     );
   }
@@ -137,10 +123,7 @@ export default function DonorResultsGrid() {
         <div>
           <h2 className="text-2xl font-bold text-[#102A43]">
             {filteredDonors.length}{" "}
-            {filteredDonors.length === 1
-              ? "donor"
-              : "donors"}{" "}
-            found
+            {filteredDonors.length === 1 ? "donor" : "donors"} found
           </h2>
 
           <p className="mt-1 text-sm text-[#64748B]">
@@ -170,9 +153,7 @@ export default function DonorResultsGrid() {
             <DonorCard
               key={donor.id}
               donor={donor}
-              onRequestContact={() =>
-                setSelectedDonor(donor)
-              }
+              onRequestContact={() => setSelectedDonor(donor)}
             />
           ))}
         </section>
@@ -181,9 +162,7 @@ export default function DonorResultsGrid() {
       {selectedDonor && (
         <ContactModal
           donor={selectedDonor}
-          onClose={() =>
-            setSelectedDonor(null)
-          }
+          onClose={() => setSelectedDonor(null)}
         />
       )}
     </>
@@ -197,12 +176,9 @@ function DonorCard({
   donor: ApiDonor;
   onRequestContact: () => void;
 }) {
-  const lastDonation =
-    donor.lastDonation
-      ? new Date(
-          donor.lastDonation
-        ).toLocaleDateString()
-      : "Not provided";
+  const lastDonation = donor.lastDonation
+    ? new Date(donor.lastDonation).toLocaleDateString()
+    : "Not provided";
 
   const initials = donor.user.name
     .split(" ")
@@ -212,20 +188,14 @@ function DonorCard({
     .toUpperCase();
 
   return (
-    <article className="group flex h-full flex-col rounded-2xl border border-[#E3BEB8] bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+    <article className="flex h-full flex-col rounded-2xl border border-[#E3BEB8] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
       <div className="mb-5 flex items-start justify-between">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-lg font-bold text-[#910102]">
-          {initials || (
-            <UserRound size={26} />
-          )}
+          {initials || <UserRound size={26} />}
         </div>
 
         <div className="flex h-12 min-w-12 items-center justify-center rounded-full bg-[#910102] px-3 text-sm font-extrabold text-white">
-          {
-            bloodGroupToLabel[
-              donor.bloodGroup
-            ]
-          }
+          {bloodGroupToLabel[donor.bloodGroup]}
         </div>
       </div>
 
@@ -235,38 +205,29 @@ function DonorCard({
 
       <p className="mt-2 flex items-center gap-1.5 text-sm text-[#5A403C]">
         <MapPin size={16} />
-
         <span>
-          {donor.area
-            ? `${donor.area}, `
-            : ""}
+          {donor.area ? `${donor.area}, ` : ""}
           {donor.district}
         </span>
       </p>
 
       <div className="mt-4">
         <span className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-          Available Now
+          <span className="h-2 w-2 rounded-full bg-green-500" />
+          Available (self-reported)
         </span>
       </div>
 
       <div className="my-5 space-y-3 border-y border-slate-100 py-4 text-sm">
         <div className="flex justify-between gap-3">
-          <span className="text-[#5A403C]">
-            Last donation
-          </span>
-
+          <span className="text-[#5A403C]">Last donation</span>
           <span className="text-right font-semibold text-[#102A43]">
             {lastDonation}
           </span>
         </div>
 
         <div className="flex justify-between gap-3">
-          <span className="text-[#5A403C]">
-            Contact
-          </span>
-
+          <span className="text-[#5A403C]">Contact</span>
           <span className="flex items-center gap-1 font-semibold text-[#102A43]">
             <Phone size={14} />
             Protected
@@ -277,7 +238,7 @@ function DonorCard({
       <button
         type="button"
         onClick={onRequestContact}
-        className="mt-auto flex w-full items-center justify-center rounded-[10px] border-2 border-[#910102] bg-white py-3 text-sm font-bold text-[#910102] transition hover:bg-[#910102] hover:text-white active:scale-[0.98]"
+        className="mt-auto flex w-full items-center justify-center rounded-xl border-2 border-[#910102] bg-white py-3 text-sm font-bold text-[#910102] transition hover:bg-[#910102] hover:text-white"
       >
         Request Contact
       </button>
@@ -294,18 +255,23 @@ function ContactModal({
 }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Donor contact request"
+        className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl"
+      >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close contact request"
-          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#64748B] shadow-md transition hover:bg-red-50 hover:text-[#910102]"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#64748B] shadow-md hover:bg-red-50 hover:text-[#910102]"
         >
           <X size={20} />
         </button>
 
         <div className="border-b border-slate-100 px-6 pb-5 pt-7 sm:px-8">
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#910102]">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#910102]">
             Donor Contact Request
           </span>
 
@@ -315,10 +281,7 @@ function ContactModal({
 
           <p className="mt-2 flex items-center gap-1.5 text-sm text-[#64748B]">
             <MapPin size={15} />
-
-            {donor.area
-              ? `${donor.area}, `
-              : ""}
+            {donor.area ? `${donor.area}, ` : ""}
             {donor.district}
           </p>
         </div>

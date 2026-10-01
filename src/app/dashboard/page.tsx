@@ -1,8 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
 import {
   Activity,
   CalendarDays,
@@ -15,12 +15,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import BloodRequestModal from "@/components/blood/BloodRequestModal";
 import ContactRequestsSection from "@/components/dashboard/ContactRequestsSection";
@@ -30,44 +25,20 @@ import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import HeartLoader from "@/components/ui/HeartLoader";
 
 import { apiRequest } from "@/lib/api";
+import { getAuthToken, getStoredUser } from "@/lib/auth";
 import { bloodGroupToLabel } from "@/lib/bloodGroup";
+import type { ApiBloodGroup, ApiDonor } from "@/types/donor";
 
-import type {
-  ApiBloodGroup,
-  ApiDonor,
-} from "@/types/donor";
-
-type StoredUser = {
+type UserProfile = {
   id: string;
   name: string;
   email: string;
   phone: string | null;
   role: string;
   status: string;
+  createdAt: string;
+  donorProfile?: ApiDonor | null;
 };
-
-type UserResponse = {
-  success: boolean;
-  message: string;
-
-  data: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string | null;
-    role: string;
-    status: string;
-    createdAt: string;
-
-    donorProfile?: ApiDonor | null;
-  };
-};
-
-type BloodRequestStatus =
-  | "PENDING"
-  | "APPROVED"
-  | "REJECTED"
-  | "COMPLETED";
 
 type BloodRequest = {
   id: string;
@@ -79,258 +50,130 @@ type BloodRequest = {
   requiredDate: string;
   phone: string;
   message: string | null;
-  status: BloodRequestStatus;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED";
   createdAt: string;
 };
 
-type BloodRequestResponse = {
+type ApiResponse<T> = {
   success: boolean;
   message: string;
-  data: BloodRequest[];
+  data: T;
 };
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  const [user, setUser] =
-    useState<StoredUser | null>(
-      null
-    );
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [bloodRequests, setBloodRequests] = useState<BloodRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [profile, setProfile] =
-    useState<
-      UserResponse["data"] | null
-    >(null);
+  const [isBloodRequestModalOpen, setIsBloodRequestModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isEditDonorProfileOpen, setIsEditDonorProfileOpen] = useState(false);
 
-  const [
-    bloodRequests,
-    setBloodRequests,
-  ] = useState<
-    BloodRequest[]
-  >([]);
+  const loadDashboard = useCallback(async () => {
+    const token = getAuthToken();
+    const storedUser = getStoredUser();
 
-  const [
-    isBloodRequestModalOpen,
-    setIsBloodRequestModalOpen,
-  ] = useState(false);
+    if (!token || !storedUser) {
+      router.replace("/login");
+      return;
+    }
 
-  const [
-    isEditProfileOpen,
-    setIsEditProfileOpen,
-  ] = useState(false);
+    if (storedUser.role === "ADMIN") {
+      router.replace("/admin");
+      return;
+    }
 
-  const [
-    isEditDonorProfileOpen,
-    setIsEditDonorProfileOpen,
-  ] = useState(false);
+    setError("");
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+    try {
+      const [profileResponse, bloodResponse] = await Promise.all([
+        apiRequest<ApiResponse<UserProfile>>(
+          `/api/users/${storedUser.id}`,
+          { token }
+        ),
+        apiRequest<ApiResponse<BloodRequest[]>>(
+          "/api/blood-requests/my",
+          { token }
+        ),
+      ]);
 
-  const [error, setError] =
-    useState("");
-
-  const loadDashboardData =
-    async (
-      token: string,
-      currentUser: StoredUser
-    ) => {
-      const profileResponse =
-        await apiRequest<UserResponse>(
-          `/api/users/${currentUser.id}`,
-          {
-            token,
-          }
-        );
-
-      setProfile(
-        profileResponse.data
+      setProfile(profileResponse.data);
+      setBloodRequests(bloodResponse.data);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load dashboard"
       );
-
-      const bloodResponse =
-        await apiRequest<BloodRequestResponse>(
-          "/api/blood-requests",
-          {
-            token,
-          }
-        );
-
-      const myRequests =
-        bloodResponse.data.filter(
-          (request) =>
-            request.userId ===
-            currentUser.id
-        );
-
-      setBloodRequests(
-        myRequests
-      );
-    };
-
-  useEffect(() => {
-    const loadDashboard =
-      async () => {
-        const token =
-          localStorage.getItem(
-            "lifelink_token"
-          );
-
-        const storedUser =
-          localStorage.getItem(
-            "lifelink_user"
-          );
-
-        if (
-          !token ||
-          !storedUser
-        ) {
-          router.replace(
-            "/login"
-          );
-
-          return;
-        }
-
-        try {
-          const parsedUser =
-            JSON.parse(
-              storedUser
-            ) as StoredUser;
-
-          if (
-            parsedUser.role ===
-            "ADMIN"
-          ) {
-            router.replace(
-              "/admin"
-            );
-
-            return;
-          }
-
-          setUser(
-            parsedUser
-          );
-
-          await loadDashboardData(
-            token,
-            parsedUser
-          );
-        } catch (error) {
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load dashboard"
-          );
-        } finally {
-          setIsLoading(
-            false
-          );
-        }
-      };
-
-    loadDashboard();
+    } finally {
+      setIsLoading(false);
+    }
   }, [router]);
 
-  const donorProfile =
-    useMemo(() => {
-      return (
-        profile?.donorProfile ??
-        null
-      );
-    }, [profile]);
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
-  const handleBloodRequestSuccess =
-    async () => {
-      const token =
-        localStorage.getItem(
-          "lifelink_token"
-        );
-
-      if (
-        !token ||
-        !user
-      ) {
-        return;
-      }
-
-      try {
-        await loadDashboardData(
-          token,
-          user
-        );
-      } catch {
-        // submission already done
-      }
-    };
-
-  const handleDonorUpdated = (
-    updatedDonor: ApiDonor
-  ) => {
-    setProfile(
-      (current) => {
-        if (!current) {
-          return current;
-        }
-
-        return {
-          ...current,
-
-          donorProfile: {
-            ...current.donorProfile,
-            ...updatedDonor,
-          } as ApiDonor,
-        };
-      }
+  const handleDonorUpdated = (updatedDonor: ApiDonor) => {
+    setProfile((current) =>
+      current
+        ? { ...current, donorProfile: updatedDonor }
+        : current
     );
   };
 
   if (isLoading) {
     return (
       <main className="flex min-h-[75vh] items-center justify-center bg-[#F8FAFC] text-[#910102]">
-        <HeartLoader
-          text="Loading your dashboard..."
-          size={34}
-        />
+        <HeartLoader text="Loading dashboard..." size={34} />
       </main>
     );
   }
 
-  if (error) {
+  if (!profile) {
     return (
-      <main className="min-h-[70vh] bg-[#F8FAFC] px-4 py-16">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-          <h1 className="text-xl font-bold text-red-700">
-            Could not load dashboard
-          </h1>
+      <main className="mx-auto max-w-4xl px-4 py-16">
+        <p className="text-red-700">
+          {error || "Unable to load your profile."}
+        </p>
 
-          <p className="mt-2 text-red-600">
-            {error}
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setIsLoading(true);
+            void loadDashboard();
+          }}
+          className="mt-4 rounded-xl bg-[#910102] px-5 py-3 font-bold text-white"
+        >
+          Retry
+        </button>
       </main>
     );
   }
 
-  if (
-    !user ||
-    !profile
-  ) {
-    return null;
-  }
+  const donorProfile =
+    profile.donorProfile && !profile.donorProfile.isDeleted
+      ? profile.donorProfile
+      : null;
+
+  const initials = profile.name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <>
       <main className="min-h-screen bg-[#F8FAFC] py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* HEADER */}
-          <section className="mb-8 rounded-3xl bg-gradient-to-r from-[#910102] to-[#660000] p-7 text-white shadow-lg sm:p-9">
+          <header className="mb-8 rounded-3xl bg-gradient-to-r from-[#910102] to-[#660000] p-7 text-white shadow-lg sm:p-9">
             <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
               <div className="flex items-center gap-5">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl font-extrabold backdrop-blur">
-                  {getInitials(
-                    profile.name
-                  )}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 text-2xl font-extrabold">
+                  {initials}
                 </div>
 
                 <div>
@@ -339,20 +182,12 @@ export default function DashboardPage() {
                   </p>
 
                   <h1 className="mt-1 text-3xl font-bold">
-                    {
-                      profile.name
-                    }
+                    {profile.name}
                   </h1>
 
                   <p className="mt-2 flex items-center gap-2 text-sm text-white/80">
-                    <ShieldCheck
-                      size={16}
-                    />
-
-                    {
-                      profile.role
-                    }{" "}
-                    Account
+                    <ShieldCheck size={16} />
+                    {profile.role} Account
                   </p>
                 </div>
               </div>
@@ -361,7 +196,7 @@ export default function DashboardPage() {
                 {!donorProfile && (
                   <Link
                     href="/become-donor"
-                    className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#910102] transition hover:-translate-y-0.5 hover:shadow-lg"
+                    className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#910102]"
                   >
                     Become a Donor
                   </Link>
@@ -369,39 +204,30 @@ export default function DashboardPage() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setIsBloodRequestModalOpen(
-                      true
-                    )
-                  }
-                  className="rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+                  onClick={() => setIsBloodRequestModalOpen(true)}
+                  className="rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white"
                 >
                   Request Blood
                 </button>
               </div>
             </div>
-          </section>
+          </header>
 
-          {/* STATS */}
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              {error}
+            </div>
+          )}
+
           <section className="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              icon={
-                <UserRound
-                  size={23}
-                />
-              }
+              icon={<UserRound size={22} />}
               label="Account Status"
-              value={
-                profile.status
-              }
+              value={profile.status}
             />
 
             <StatCard
-              icon={
-                <HeartHandshake
-                  size={23}
-                />
-              }
+              icon={<HeartHandshake size={22} />}
               label="Donor Status"
               value={
                 donorProfile
@@ -413,219 +239,116 @@ export default function DashboardPage() {
             />
 
             <StatCard
-              icon={
-                <Droplets
-                  size={23}
-                />
-              }
+              icon={<Droplets size={22} />}
               label="Blood Requests"
-              value={String(
-                bloodRequests.length
-              )}
+              value={String(bloodRequests.length)}
             />
 
             <StatCard
-              icon={
-                <Activity
-                  size={23}
-                />
-              }
+              icon={<Activity size={22} />}
               label="Role"
-              value={
-                profile.role
-              }
+              value={profile.role}
             />
           </section>
 
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            {/* LEFT */}
             <div className="space-y-8">
-              {/* USER PROFILE */}
               <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm">
-                <div className="mb-6 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
-                      Account
-                    </p>
-
-                    <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
-                      My Profile
-                    </h2>
-                  </div>
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-[#102A43]">
+                    My Profile
+                  </h2>
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setIsEditProfileOpen(
-                        true
-                      )
-                    }
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2 text-sm font-bold text-[#910102] transition hover:bg-red-100"
+                    onClick={() => setIsEditProfileOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-[#910102]"
                   >
-                    <Pencil
-                      size={16}
-                    />
+                    <Pencil size={16} />
                     Edit
                   </button>
                 </div>
 
                 <div className="space-y-5">
                   <ProfileRow
-                    icon={
-                      <UserRound
-                        size={19}
-                      />
-                    }
+                    icon={<UserRound size={19} />}
                     label="Full Name"
-                    value={
-                      profile.name
-                    }
+                    value={profile.name}
                   />
 
                   <ProfileRow
-                    icon={
-                      <Mail
-                        size={19}
-                      />
-                    }
+                    icon={<Mail size={19} />}
                     label="Email"
-                    value={
-                      profile.email
-                    }
+                    value={profile.email}
                   />
 
                   <ProfileRow
-                    icon={
-                      <Phone
-                        size={19}
-                      />
-                    }
+                    icon={<Phone size={19} />}
                     label="Phone"
-                    value={
-                      profile.phone ||
-                      "Not provided"
-                    }
+                    value={profile.phone || "Not provided"}
                   />
 
                   <ProfileRow
-                    icon={
-                      <ShieldCheck
-                        size={19}
-                      />
-                    }
+                    icon={<ShieldCheck size={19} />}
                     label="Account Status"
-                    value={
-                      profile.status
-                    }
+                    value={profile.status}
                   />
                 </div>
               </section>
 
-              {/* DONOR PROFILE */}
               <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
-                      Donation
-                    </p>
-
-                    <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
-                      My Donor Profile
-                    </h2>
-                  </div>
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-[#102A43]">
+                    Donor Profile
+                  </h2>
 
                   {donorProfile && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setIsEditDonorProfileOpen(
-                          true
-                        )
-                      }
-                      className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2 text-sm font-bold text-[#910102] transition hover:bg-red-100"
+                      onClick={() => setIsEditDonorProfileOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-[#910102]"
                     >
-                      <Pencil
-                        size={16}
-                      />
+                      <Pencil size={16} />
                       Edit
                     </button>
                   )}
                 </div>
 
                 {!donorProfile ? (
-                  <div className="mt-6 rounded-2xl bg-red-50 p-6">
-                    <HeartHandshake
-                      size={32}
-                      className="text-[#910102]"
-                    />
-
-                    <h3 className="mt-4 font-bold text-[#102A43]">
-                      You are not
-                      registered as a
-                      donor yet
-                    </h3>
-
-                    <p className="mt-2 text-sm leading-6 text-[#64748B]">
-                      Create a donor
-                      profile to become
-                      searchable by
-                      people who need
-                      blood.
+                  <div>
+                    <p className="text-sm text-slate-600">
+                      You have not created a donor profile yet.
                     </p>
 
                     <Link
                       href="/become-donor"
-                      className="mt-5 inline-flex rounded-xl bg-[#910102] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#B42318]"
+                      className="mt-5 inline-block rounded-xl bg-[#910102] px-5 py-3 text-sm font-bold text-white"
                     >
                       Become a Donor
                     </Link>
                   </div>
                 ) : (
-                  <div className="mt-6 space-y-5">
-                    <div className="flex items-center justify-between rounded-2xl bg-[#FFF4F3] p-5">
-                      <div>
-                        <p className="text-sm text-[#64748B]">
-                          Blood Group
-                        </p>
-
-                        <p className="mt-1 text-3xl font-black text-[#910102]">
-                          {
-                            bloodGroupToLabel[
-                              donorProfile
-                                .bloodGroup
-                            ]
-                          }
-                        </p>
-                      </div>
-
-                      <Droplets
-                        size={38}
-                        className="text-[#910102]"
-                      />
-                    </div>
-
+                  <div className="space-y-5">
                     <ProfileRow
-                      icon={
-                        <MapPin
-                          size={19}
-                        />
-                      }
-                      label="Location"
-                      value={`${
-                        donorProfile.area
-                          ? `${donorProfile.area}, `
-                          : ""
-                      }${
-                        donorProfile.district
-                      }`}
+                      icon={<Droplets size={19} />}
+                      label="Blood Group"
+                      value={bloodGroupToLabel[donorProfile.bloodGroup]}
                     />
 
                     <ProfileRow
-                      icon={
-                        <CalendarDays
-                          size={19}
-                        />
-                      }
+                      icon={<MapPin size={19} />}
+                      label="District"
+                      value={donorProfile.district}
+                    />
+
+                    <ProfileRow
+                      icon={<MapPin size={19} />}
+                      label="Area"
+                      value={donorProfile.area || "Not provided"}
+                    />
+
+                    <ProfileRow
+                      icon={<CalendarDays size={19} />}
                       label="Last Donation"
                       value={
                         donorProfile.lastDonation
@@ -637,172 +360,90 @@ export default function DashboardPage() {
                     />
 
                     <DonorAvailabilityToggle
-                      donor={
-                        donorProfile
-                      }
-                      onUpdated={
-                        handleDonorUpdated
-                      }
+                      donor={donorProfile}
+                      onUpdated={handleDonorUpdated}
                     />
                   </div>
                 )}
               </section>
             </div>
 
-            {/* BLOOD REQUESTS */}
             <section className="rounded-3xl border border-[#E7E9EE] bg-white p-6 shadow-sm sm:p-7">
               <div className="mb-6 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#910102]">
-                    Activity
-                  </p>
-
-                  <h2 className="mt-2 text-2xl font-bold text-[#102A43]">
-                    My Blood Requests
-                  </h2>
-                </div>
+                <h2 className="text-2xl font-bold text-[#102A43]">
+                  My Blood Requests
+                </h2>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setIsBloodRequestModalOpen(
-                      true
-                    )
-                  }
-                  className="rounded-xl bg-[#910102] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#B42318]"
+                  onClick={() => setIsBloodRequestModalOpen(true)}
+                  className="rounded-xl bg-[#910102] px-4 py-2.5 text-sm font-bold text-white"
                 >
                   New Request
                 </button>
               </div>
 
-              {bloodRequests.length ===
-              0 ? (
-                <div className="rounded-2xl border border-dashed border-[#D7DEE7] py-14 text-center">
-                  <Droplets
-                    size={40}
-                    className="mx-auto text-[#910102]"
-                  />
-
-                  <h3 className="mt-4 font-bold text-[#102A43]">
-                    No blood requests
-                    yet
-                  </h3>
-
-                  <p className="mt-2 text-sm text-[#64748B]">
-                    Your submitted
-                    blood requests will
-                    appear here.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setIsBloodRequestModalOpen(
-                        true
-                      )
-                    }
-                    className="mt-5 rounded-xl bg-[#910102] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#B42318]"
-                  >
-                    Create Request
-                  </button>
+              {bloodRequests.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+                  You have not submitted any blood requests.
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {bloodRequests.map(
-                    (request) => (
-                      <BloodRequestCard
-                        key={
-                          request.id
-                        }
-                        request={
-                          request
-                        }
-                      />
-                    )
-                  )}
+                  {bloodRequests.map((request) => (
+                    <BloodRequestCard
+                      key={request.id}
+                      request={request}
+                    />
+                  ))}
                 </div>
               )}
             </section>
           </div>
 
-          {/* CONTACT REQUESTS */}
           <div className="mt-8">
             <ContactRequestsSection />
           </div>
         </div>
       </main>
 
-      {/* BLOOD MODAL */}
       <BloodRequestModal
-        isOpen={
-          isBloodRequestModalOpen
-        }
-        onClose={() =>
-          setIsBloodRequestModalOpen(
-            false
-          )
-        }
-        onSuccess={
-          handleBloodRequestSuccess
-        }
+        isOpen={isBloodRequestModalOpen}
+        onClose={() => setIsBloodRequestModalOpen(false)}
+        onSuccess={loadDashboard}
       />
 
-      {/* PROFILE MODAL */}
       <EditProfileModal
-        isOpen={
-          isEditProfileOpen
-        }
+        isOpen={isEditProfileOpen}
         profile={profile}
-        onClose={() =>
-          setIsEditProfileOpen(
-            false
-          )
-        }
-        onUpdated={(
-          updatedProfile
-        ) => {
-          setProfile(
-            (current) =>
-              current
-                ? {
-                    ...current,
-                    ...updatedProfile,
-                  }
-                : current
+        onClose={() => setIsEditProfileOpen(false)}
+        onUpdated={(updatedProfile) => {
+          setProfile((current) =>
+            current
+              ? { ...current, ...updatedProfile }
+              : current
           );
 
-          setUser(
-            (current) =>
-              current
-                ? {
-                    ...current,
-                    name:
-                      updatedProfile.name,
-                    phone:
-                      updatedProfile.phone,
-                  }
-                : current
-          );
+          const stored = getStoredUser();
+
+          if (stored) {
+            localStorage.setItem(
+              "lifelink_user",
+              JSON.stringify({
+                ...stored,
+                name: updatedProfile.name,
+                phone: updatedProfile.phone,
+              })
+            );
+          }
         }}
       />
 
-      {/* DONOR EDIT MODAL */}
       {donorProfile && (
         <EditDonorProfileModal
-          isOpen={
-            isEditDonorProfileOpen
-          }
-          donor={
-            donorProfile
-          }
-          onClose={() =>
-            setIsEditDonorProfileOpen(
-              false
-            )
-          }
-          onUpdated={
-            handleDonorUpdated
-          }
+          isOpen={isEditDonorProfileOpen}
+          donor={donorProfile}
+          onClose={() => setIsEditDonorProfileOpen(false)}
+          onUpdated={handleDonorUpdated}
         />
       )}
     </>
@@ -819,18 +460,13 @@ function StatCard({
   value: string;
 }) {
   return (
-    <article className="rounded-2xl border border-[#E7E9EE] bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
+    <article className="rounded-2xl border border-[#E7E9EE] bg-white p-5 shadow-sm">
       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-[#910102]">
         {icon}
       </div>
 
-      <p className="mt-4 text-sm text-[#64748B]">
-        {label}
-      </p>
-
-      <p className="mt-1 text-xl font-bold text-[#102A43]">
-        {value}
-      </p>
+      <p className="mt-4 text-sm text-[#64748B]">{label}</p>
+      <p className="mt-1 text-xl font-bold text-[#102A43]">{value}</p>
     </article>
   );
 }
@@ -845,17 +481,14 @@ function ProfileRow({
   value: string;
 }) {
   return (
-    <div className="flex gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F3F5F7] text-[#910102]">
+    <div className="flex items-start gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#910102]">
         {icon}
       </div>
 
       <div className="min-w-0">
-        <p className="text-xs font-medium text-[#64748B]">
-          {label}
-        </p>
-
-        <p className="mt-1 break-all font-semibold text-[#102A43]">
+        <p className="text-xs text-[#64748B]">{label}</p>
+        <p className="mt-1 break-words font-semibold text-[#102A43]">
           {value}
         </p>
       </div>
@@ -868,104 +501,58 @@ function BloodRequestCard({
 }: {
   request: BloodRequest;
 }) {
+  const statusClass: Record<BloodRequest["status"], string> = {
+    PENDING: "bg-amber-50 text-amber-700",
+    APPROVED: "bg-green-50 text-green-700",
+    REJECTED: "bg-red-50 text-red-700",
+    COMPLETED: "bg-slate-100 text-slate-700",
+  };
+
   return (
-    <article className="rounded-2xl border border-[#E7E9EE] p-5 transition hover:border-red-200 hover:shadow-sm">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-lg font-bold text-[#102A43]">
-              {
-                request.patientName
-              }
+    <article className="rounded-2xl border border-slate-200 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="rounded-xl bg-[#910102] px-3 py-2 font-black text-white">
+            {bloodGroupToLabel[request.bloodGroup]}
+          </span>
+
+          <div>
+            <h3 className="font-bold text-[#102A43]">
+              {request.patientName}
             </h3>
 
-            <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-[#910102]">
-              {
-                bloodGroupToLabel[
-                  request.bloodGroup
-                ]
-              }
-            </span>
+            <p className="text-sm text-slate-500">
+              {request.hospital}
+            </p>
           </div>
-
-          <p className="mt-3 text-sm font-semibold text-[#49607C]">
-            {request.hospital}
-          </p>
-
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-[#64748B]">
-            <MapPin
-              size={15}
-            />
-
-            {request.district}
-          </p>
         </div>
 
-        <RequestStatus
-          status={
-            request.status
-          }
-        />
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-bold ${
+            statusClass[request.status]
+          }`}
+        >
+          {request.status}
+        </span>
       </div>
 
-      {request.message && (
-        <p className="mt-4 rounded-xl bg-[#F8FAFC] p-3 text-sm leading-6 text-[#64748B]">
-          {request.message}
+      <div className="mt-4 space-y-2 text-sm text-slate-600">
+        <p className="flex items-center gap-2">
+          <MapPin size={15} />
+          {request.district}
         </p>
-      )}
 
-      <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-4 text-xs text-[#64748B]">
-        <span>
-          Required:{" "}
-          {new Date(
-            request.requiredDate
-          ).toLocaleDateString()}
-        </span>
+        <p className="flex items-center gap-2">
+          <CalendarDays size={15} />
+          {new Date(request.requiredDate).toLocaleDateString()}
+        </p>
 
-        <span>
-          Created:{" "}
-          {new Date(
-            request.createdAt
-          ).toLocaleDateString()}
-        </span>
+        {request.message && (
+          <p className="whitespace-pre-wrap break-words">
+            {request.message}
+          </p>
+        )}
       </div>
     </article>
   );
-}
-
-function RequestStatus({
-  status,
-}: {
-  status: BloodRequestStatus;
-}) {
-  const classes =
-    status === "APPROVED"
-      ? "bg-green-50 text-green-700"
-      : status === "REJECTED"
-        ? "bg-red-50 text-red-700"
-        : status === "COMPLETED"
-          ? "bg-blue-50 text-blue-700"
-          : "bg-amber-50 text-amber-700";
-
-  return (
-    <span
-      className={`self-start rounded-full px-3 py-1.5 text-xs font-bold ${classes}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function getInitials(
-  name: string
-) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map(
-      (part) => part[0]
-    )
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
